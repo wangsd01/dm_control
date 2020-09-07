@@ -44,6 +44,7 @@ from dm_control.suite import reacher
 from dm_control.suite import stacker
 from dm_control.suite import swimmer
 from dm_control.suite import walker
+from dm_control.suite import superball
 
 # Find all domains imported.
 _DOMAINS = {name: module for name, module in locals().items()
@@ -118,6 +119,7 @@ def load(domain_name, task_name, task_kwargs=None, environment_kwargs=None,
                            environment_kwargs, visualize_reward)
 
 
+# noinspection PyPackageRequirements
 def build_environment(domain_name, task_name, task_kwargs=None,
                       environment_kwargs=None, visualize_reward=False):
   """Returns an environment from the suite given a domain name and a task name.
