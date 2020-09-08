@@ -28,13 +28,14 @@ from dm_control.suite import common
 from dm_control.suite.utils import randomizers
 from dm_control.utils import containers
 from dm_control.utils import rewards
+import numpy as np
 
 
 _DEFAULT_TIME_LIMIT = 25
 _CONTROL_TIMESTEP = .025
 
 # Minimal height of torso over foot above which stand reward is 1.
-_STAND_HEIGHT = 1.2
+_STAND_HEIGHT = -5
 
 # Horizontal speeds (meters/second) above which move reward is 1.
 _WALK_SPEED = 1
@@ -53,7 +54,7 @@ def get_model_and_assets():
 def stand(time_limit=_DEFAULT_TIME_LIMIT, random=None, environment_kwargs=None):
   """Returns the Stand task."""
   physics = Physics.from_xml_string(*get_model_and_assets())
-  task = Planarsuperball(move_speed=0, random=random)
+  task = PlanarSuperball(move_speed=0, random=random)
   environment_kwargs = environment_kwargs or {}
   return control.Environment(
       physics, task, time_limit=time_limit, control_timestep=_CONTROL_TIMESTEP,
@@ -64,7 +65,7 @@ def stand(time_limit=_DEFAULT_TIME_LIMIT, random=None, environment_kwargs=None):
 def walk(time_limit=_DEFAULT_TIME_LIMIT, random=None, environment_kwargs=None):
   """Returns the Walk task."""
   physics = Physics.from_xml_string(*get_model_and_assets())
-  task = Planarsuperball(move_speed=_WALK_SPEED, random=random)
+  task = PlanarSuperball(move_speed=_WALK_SPEED, random=random)
   environment_kwargs = environment_kwargs or {}
   return control.Environment(
       physics, task, time_limit=time_limit, control_timestep=_CONTROL_TIMESTEP,
@@ -75,7 +76,7 @@ def walk(time_limit=_DEFAULT_TIME_LIMIT, random=None, environment_kwargs=None):
 def run(time_limit=_DEFAULT_TIME_LIMIT, random=None, environment_kwargs=None):
   """Returns the Run task."""
   physics = Physics.from_xml_string(*get_model_and_assets())
-  task = Planarsuperball(move_speed=_RUN_SPEED, random=random)
+  task = PlanarSuperball(move_speed=_RUN_SPEED, random=random)
   environment_kwargs = environment_kwargs or {}
   return control.Environment(
       physics, task, time_limit=time_limit, control_timestep=_CONTROL_TIMESTEP,
@@ -85,28 +86,35 @@ def run(time_limit=_DEFAULT_TIME_LIMIT, random=None, environment_kwargs=None):
 class Physics(mujoco.Physics):
   """Physics simulation with additional features for the superball domain."""
 
-  def torso_upright(self):
-    """Returns projection from z-axes of torso to the z-axes of world."""
-    return self.named.data.xmat['torso', 'zz']
+  # def torso_upright(self):
+  #   """Returns projection from z-axes of torso to the z-axes of world."""
+  #   return self.named.data.xmat[1:, 'zz']
 
-  def torso_height(self):
+  def superball_height(self):
     """Returns the height of the torso."""
-    return self.named.data.xpos['torso', 'z']
+    return np.mean(self.named.data.xpos[1:, 'z'])
 
-  def horizontal_velocity(self):
+  def superball_horizontal_velocity(self):
     """Returns the horizontal velocity of the center-of-mass."""
-    return self.named.data.sensordata['torso_subtreelinvel'][0]
+    return np.mean(self.named.data.cvel[1:, 3])
 
-  def orientations(self):
+  def rods_orientations(self):
     """Returns planar orientations of all bodies."""
     return self.named.data.xmat[1:, ['xx', 'xz']].ravel()
 
+  def rods_velocities(self):
+    return self.named.data.cvel[1:]
 
-class Planarsuperball(base.Task):
+  def rods_heights(self):
+    return self.named.data.xpos[1:, 'z']
+
+
+
+class PlanarSuperball(base.Task):
   """A planar superball task."""
 
   def __init__(self, move_speed, random=None):
-    """Initializes an instance of `Planarsuperball`.
+    """Initializes an instance of `PlanarSuperball`.
 
     Args:
       move_speed: A float. If this value is zero, reward is given simply for
@@ -117,7 +125,7 @@ class Planarsuperball(base.Task):
         automatically (default).
     """
     self._move_speed = move_speed
-    super(Planarsuperball, self).__init__(random=random)
+    super(PlanarSuperball, self).__init__(random=random)
 
   def initialize_episode(self, physics):
     """Sets the state of the environment at the start of each episode.
@@ -129,28 +137,27 @@ class Planarsuperball(base.Task):
       physics: An instance of `Physics`.
 
     """
-    randomizers.randomize_limited_and_rotational_joints(physics, self.random)
-    super(Planarsuperball, self).initialize_episode(physics)
+    # randomizers.randomize_limited_and_rotational_joints(physics, self.random)
+    super(PlanarSuperball, self).initialize_episode(physics)
 
   def get_observation(self, physics):
-    """Returns an observation of body orientations, height and velocites."""
+    """Returns an observation of body height and velocites."""
     obs = collections.OrderedDict()
-    obs['orientations'] = physics.orientations()
-    obs['height'] = physics.torso_height()
-    obs['velocity'] = physics.velocity()
+    obs['height'] = physics.rods_heights()
+    obs['velocity'] = physics.rods_velocities()
+    obs['orientation'] = physics.rods_orientations()
     return obs
 
   def get_reward(self, physics):
     """Returns a reward to the agent."""
-    standing = rewards.tolerance(physics.torso_height(),
+    standing = rewards.tolerance(physics.superball_height(),
                                  bounds=(_STAND_HEIGHT, float('inf')),
-                                 margin=_STAND_HEIGHT/2)
-    upright = (1 + physics.torso_upright()) / 2
-    stand_reward = (3*standing + upright) / 4
+                                 margin=np.abs(_STAND_HEIGHT/2))
+    stand_reward = standing
     if self._move_speed == 0:
       return stand_reward
     else:
-      move_reward = rewards.tolerance(physics.horizontal_velocity(),
+      move_reward = rewards.tolerance(physics.superball_horizontal_velocity(),
                                       bounds=(self._move_speed, float('inf')),
                                       margin=self._move_speed/2,
                                       value_at_margin=0.5,

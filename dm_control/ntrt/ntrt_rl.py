@@ -5,8 +5,8 @@ import numpy as np
 env = suite.load(domain_name="superball", task_name="run")
 
 # Iterate over a task set:
-for domain_name, task_name in suite.BENCHMARKING:
-  env = suite.load(domain_name, task_name)
+# for domain_name, task_name in suite.BENCHMARKING:
+#   env = suite.load(domain_name, task_name)
 
 # Step through an episode and print out reward, discount and observation.
 action_spec = env.action_spec()
