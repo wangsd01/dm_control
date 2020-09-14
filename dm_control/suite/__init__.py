@@ -45,6 +45,7 @@ from dm_control.suite import stacker
 from dm_control.suite import swimmer
 from dm_control.suite import walker
 from dm_control.suite import superball
+from dm_control.suite import superballv1
 
 # Find all domains imported.
 _DOMAINS = {name: module for name, module in locals().items()
