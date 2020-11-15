@@ -54,7 +54,7 @@ class LqrTest(parameterized.TestCase):
     for _ in range(n_steps):
       x = np.hstack((timestep.observation['position'],
                      timestep.observation['velocity']))
-      # u = k*x is the optimal policy
+      # u = k*x is the optimal gps
       u = k.dot(x)
       total_loss += 1 - (timestep.reward or 0.0)
       timestep = env.step(u)

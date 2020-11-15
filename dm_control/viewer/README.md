@@ -36,7 +36,7 @@ import numpy as np
 env = suite.load(domain_name="humanoid", task_name="stand")
 action_spec = env.action_spec()
 
-# Define a uniform random policy.
+# Define a uniform random gps.
 def random_policy(time_step):
   del time_step  # Unused.
   return np.random.uniform(low=action_spec.minimum,

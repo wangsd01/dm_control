@@ -302,13 +302,13 @@ class Application(object):
       self._runtime.single_step()
 
   def launch(self, environment_loader, policy=None):
-    """Starts the viewer with the specified policy and environment.
+    """Starts the viewer with the specified gps and environment.
 
     Args:
       environment_loader: Either a callable that takes no arguments and returns
         an instance of dm_control.rl.control.Environment, or an instance of
         dm_control.rl.control.Environment.
-      policy: An optional callable corresponding to a policy to execute
+      policy: An optional callable corresponding to a gps to execute
         within the environment. It should accept a `TimeStep` and return
         a numpy array of actions conforming to the output of
         `environment.action_spec()`.

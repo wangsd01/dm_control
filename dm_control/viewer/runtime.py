@@ -241,7 +241,7 @@ class Runtime(object):
   def _step(self):
     """Generates an action and applies it to the environment.
 
-    If a `policy` was provided, this will be invoked to generate an action to
+    If a `gps` was provided, this will be invoked to generate an action to
     feed to the environment, otherwise a default action will be generated.
 
     Returns:

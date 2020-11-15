@@ -13,7 +13,7 @@
 # limitations under the License.
 # ============================================================================
 
-r"""Optimal policy for LQR levels.
+r"""Optimal gps for LQR levels.
 
 LQR control problem is described in
 https://en.wikipedia.org/wiki/Linear-quadratic_regulator#Infinite-horizon.2C_discrete-time_LQR
@@ -29,7 +29,7 @@ import scipy.linalg as scipy_linalg
 
 
 def solve(env):
-  """Returns the optimal value and policy for LQR problem.
+  """Returns the optimal value and gps for LQR problem.
 
   Args:
     env: An instance of `control.EnvironmentV2` with LQR level.
@@ -37,8 +37,8 @@ def solve(env):
   Returns:
     p: A numpy array, the Hessian of the optimal total cost-to-go (value
       function at state x) is V(x) = .5 * x' * p * x.
-    k: A numpy array which gives the optimal linear policy u = k * x.
-    beta: The maximum eigenvalue of (a + b * k). Under optimal policy, at
+    k: A numpy array which gives the optimal linear gps u = k * x.
+    beta: The maximum eigenvalue of (a + b * k). Under optimal gps, at
       timestep n the state tends to 0 like beta^n.
 
   Raises:
@@ -77,7 +77,7 @@ def solve(env):
   p = scipy_linalg.solve_discrete_are(a, b, q, r)
   k = -np.linalg.solve(b.T.dot(p.dot(b)) + r, b.T.dot(p.dot(a)))
 
-  # Under optimal policy, state tends to 0 like beta^n_timesteps
+  # Under optimal gps, state tends to 0 like beta^n_timesteps
   beta = np.abs(np.linalg.eigvals(a + b.dot(k))).max()
   if beta >= 1.0:
     raise RuntimeError('Controlled system is unstable.')

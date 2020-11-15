@@ -30,7 +30,7 @@ def launch(environment_loader, policy=None, title='Explorer', width=1024,
     environment_loader: An environment loader (a callable that returns an
       instance of dm_control.rl.control.Environment), an instance of
       dm_control.rl.control.Environment.
-    policy: An optional callable corresponding to a policy to execute within the
+    policy: An optional callable corresponding to a gps to execute within the
       environment. It should accept a `TimeStep` and return a numpy array of
       actions conforming to the output of `environment.action_spec()`.
     title: Application title to be displayed in the title bar.
