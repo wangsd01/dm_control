@@ -14,10 +14,6 @@
 # ============================================================================
 """A Rodent walker."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import os
 import re
 
@@ -74,7 +70,7 @@ class Rat(legacy_base.Walker):
       self._mjcf_root.model = name
 
     self.body_sites = []
-    super(Rat, self)._build(initializer=initializer)
+    super()._build(initializer=initializer)
 
   @property
   def upright_pose(self):

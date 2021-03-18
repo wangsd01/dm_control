@@ -15,12 +15,7 @@
 
 """Tests for locomotion.tasks.soccer."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import unittest
-# Internal dependencies.
 
 from absl.testing import absltest
 from absl.testing import parameterized
@@ -31,8 +26,6 @@ from dm_control.locomotion.soccer import camera
 from dm_control.locomotion.soccer import initializers
 from dm_control.mujoco.wrapper import mjbindings
 import numpy as np
-from six.moves import range
-from six.moves import zip
 
 RGBA_BLUE = [.1, .1, .8, 1.]
 RGBA_RED = [.8, .1, .1, 1.]

@@ -15,22 +15,15 @@
 
 """Soccer task episode initializers."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import abc
-
 import numpy as np
-import six
 
 
 _INIT_BALL_Z = 0.5
 _SPAWN_RATIO = 0.6
 
 
-@six.add_metaclass(abc.ABCMeta)
-class Initializer(object):
+class Initializer(metaclass=abc.ABCMeta):
 
   @abc.abstractmethod
   def __call__(self, task, physics, random_state):
@@ -54,7 +47,14 @@ class UniformInitializer(Initializer):
     self._max_retries = max_collision_avoidance_retries
 
   def _initialize_ball(self, ball, spawn_range, physics, random_state):
-    x, y = random_state.uniform(-spawn_range, spawn_range)
+    """Initialize ball in given spawn_range."""
+    if isinstance(spawn_range, np.ndarray):
+      x, y = random_state.uniform(-spawn_range, spawn_range)
+    elif isinstance(spawn_range, (list, tuple)) and len(spawn_range) == 2:
+      x, y = random_state.uniform(spawn_range[0], spawn_range[1])
+    else:
+      raise ValueError(
+          'Unsupported spawn_range. Must be ndarray or list/tuple of length 2.')
     ball.set_pose(physics, [x, y, self._init_ball_z])
     # Note: this method is not always called immediately after `physics.reset()`
     #       so we need to explicitly zero out the velocity.

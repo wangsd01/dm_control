@@ -15,10 +15,6 @@
 
 """Helpers for MJCF elements to interact with `dm_control.mujoco.Physics`."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import collections
 import re
 import weakref
@@ -31,8 +27,6 @@ from dm_control.mjcf import debugging
 from dm_control.mujoco import wrapper as mujoco_wrapper
 from dm_control.mujoco.wrapper.mjbindings import sizes
 import numpy as np
-import six
-from six.moves import range
 
 FLAGS = flags.FLAGS
 flags.DEFINE_boolean('pymjcf_log_xml', False,
@@ -72,7 +66,7 @@ def _get_attributes(size_names, strip_prefixes):
   strip_regex = re.compile(r'\A({})_'.format('|'.join(strip_prefixes)))
   strip = lambda string: strip_regex.sub('', string)
   out = {}
-  for name, size in six.iteritems(sizes.array_sizes['mjdata']):
+  for name, size in sizes.array_sizes['mjdata'].items():
     if size[0] in size_names:
       attrib_name = strip(name)
       named_indexer_getter = (
@@ -83,7 +77,7 @@ def _get_attributes(size_names, strip_prefixes):
           get_named_indexer=named_indexer_getter,
           triggers_dirty=triggers_dirty,
           disable_on_write=())
-  for name, size in six.iteritems(sizes.array_sizes['mjmodel']):
+  for name, size in sizes.array_sizes['mjmodel'].items():
     if size[0] in size_names:
       attrib_name = strip(name)
       named_indexer_getter = (
@@ -102,8 +96,8 @@ def _get_attributes(size_names, strip_prefixes):
 # dimension of 'na') require special treatment.
 def _get_actuator_state_fields():
   actuator_state_fields = []
-  for sizes_dict in six.itervalues(sizes.array_sizes):
-    for field_name, dimensions in six.iteritems(sizes_dict):
+  for sizes_dict in sizes.array_sizes.values():
+    for field_name, dimensions in sizes_dict.items():
       if dimensions[0] == 'na':
         actuator_state_fields.append(field_name)
   return frozenset(actuator_state_fields)
@@ -166,7 +160,7 @@ def names_from_elements(mjcf_elements):
   Raises:
       ValueError: If `mjcf_elements` cannot be bound to this Physics.
   """
-  if isinstance(mjcf_elements, collections.Iterable):
+  if isinstance(mjcf_elements, collections.abc.Iterable):
     elements_tuple = tuple(mjcf_elements)
     if elements_tuple:
       namespace = _get_namespace(elements_tuple[0])
@@ -242,7 +236,7 @@ class SynchronizingArrayWrapper(np.ndarray):
   def __setitem__(self, index, value):
     if self._physics.is_dirty and not self._triggers_dirty:
       self._physics.forward()
-    super(SynchronizingArrayWrapper, self).__setitem__(index, value)
+    super().__setitem__(index, value)
 
     # Performance optimization: avoid repeatedly checking the type of the index.
     index_type = _get_index_type(index)
@@ -273,7 +267,7 @@ class SynchronizingArrayWrapper(np.ndarray):
     self.__setitem__(slice(start, stop, None), value)
 
 
-class Binding(object):
+class Binding:
   """Binding between a mujoco.Physics and an mjcf.Element or a list of Elements.
 
   This object should normally be created by calling `physics.bind(element)`
@@ -354,7 +348,7 @@ class Binding(object):
 
   def __getattr__(self, name):
     if name in Binding.__slots__:
-      return super(Binding, self).__getattr__(name)
+      return super().__getattr__(name)
     else:
       try:
         out = self._getattr_cache[name]
@@ -396,7 +390,7 @@ class Binding(object):
 
   def __setattr__(self, name, value):
     if name in Binding.__slots__:
-      super(Binding, self).__setattr__(name, value)
+      super().__setattr__(name, value)
     else:
       if self._physics.is_dirty and not self._attributes[name].triggers_dirty:
         self._physics.forward()
@@ -441,7 +435,7 @@ class Binding(object):
       self._physics.mark_as_dirty()
 
 
-class _EmptyBinding(object):
+class _EmptyBinding:
   """The result of binding no `mjcf.Elements` to an `mjcf.Physics` instance."""
 
   __slots__ = ('_arr',)
@@ -454,7 +448,7 @@ class _EmptyBinding(object):
 
   def __setattr__(self, name, value):
     if name in self.__slots__:
-      super(_EmptyBinding, self).__setattr__(name, value)
+      super().__setattr__(name, value)
     else:
       raise ValueError('Cannot assign a value to an empty binding.')
 
@@ -534,7 +528,7 @@ class Physics(mujoco.Physics):
     Args:
       data: Instance of `core.MjData`.
     """
-    super(Physics, self)._reload_from_data(data)
+    super()._reload_from_data(data)
     self._bindings = {}
     self._bindings[()] = _EMPTY_BINDING
     self._dirty = False
@@ -550,7 +544,7 @@ class Physics(mujoco.Physics):
 
   def forward(self):
     """Recomputes the forward dynamics without advancing the simulation."""
-    super(Physics, self).forward()
+    super().forward()
     self._dirty = False
 
   def bind(self, mjcf_elements):

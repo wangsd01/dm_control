@@ -15,10 +15,6 @@
 
 """Script for tuning Duplo stud sizes to give desired separation forces."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import collections
 import pprint
 from absl import app
@@ -26,7 +22,6 @@ from absl import logging
 from dm_control.entities.props import duplo
 from dm_control.entities.props.duplo import utils
 from scipy import optimize
-from six.moves import zip
 
 # pylint: disable=protected-access,invalid-name
 _StudSize = duplo._StudSize
@@ -63,7 +58,7 @@ def get_separation_force_for_radius(radius, **duplo_kwargs):
   return separation_force
 
 
-class _KeepBracketingSolutions(object):
+class _KeepBracketingSolutions:
   """Wraps objective func, keeps closest solutions bracketing the target."""
 
   _solution = collections.namedtuple('_solution', ['x', 'residual'])

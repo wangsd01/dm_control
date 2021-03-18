@@ -15,9 +15,6 @@
 
 """Tests for rescaling bodies."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 from absl.testing import absltest
 from dm_control import mjcf
@@ -28,7 +25,7 @@ import numpy as np
 class RescaleTest(absltest.TestCase):
 
   def setUp(self):
-    super(RescaleTest, self).setUp()
+    super().setUp()
 
     # build a simple three-link chain with an endpoint site
     self._mjcf_model = mjcf.RootElement()

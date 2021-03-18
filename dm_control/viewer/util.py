@@ -14,10 +14,6 @@
 # ============================================================================
 """Utility classes."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import collections
 import contextlib
 import itertools
@@ -26,12 +22,11 @@ import time
 import traceback
 
 from absl import logging
-import six
 
 # Lower bound of the time multiplier set through TimeMultiplier class.
-_MIN_TIME_MULTIPLIER = 1./16.
+_MIN_TIME_MULTIPLIER = 1./32.
 # Upper bound of the time multiplier set through TimeMultiplier class.
-_MAX_TIME_MULTIPLIER = 64.
+_MAX_TIME_MULTIPLIER = 1.
 
 
 def is_scalar(value):
@@ -46,15 +41,15 @@ def is_scalar(value):
 
 def to_iterable(item):
   """Converts an item or iterable into an iterable."""
-  if isinstance(item, six.string_types):
+  if isinstance(item, str):
     return [item]
-  elif isinstance(item, collections.Iterable):
+  elif isinstance(item, collections.abc.Iterable):
     return item
   else:
     return [item]
 
 
-class QuietSet(object):
+class QuietSet:
   """A set-like container that quietly processes removals of missing keys."""
 
   def __init__(self):
@@ -98,7 +93,7 @@ def interleave(a, b):
   return itertools.chain.from_iterable(zip(a, b))
 
 
-class TimeMultiplier(object):
+class TimeMultiplier:
   """Controls the relative speed of the simulation compared to realtime."""
 
   def __init__(self, initial_time_multiplier):
@@ -140,7 +135,7 @@ class TimeMultiplier(object):
     self.set(self._real_time_multiplier / 2.)
 
 
-class Integrator(object):
+class Integrator:
   """Integrates a value and averages it for the specified period of time."""
 
   def __init__(self, refresh_rate=.5):
@@ -174,7 +169,7 @@ class Integrator(object):
       self._sampling_timestamp = time.time()
 
 
-class AtomicAction(object):
+class AtomicAction:
   """An action that cannot be interrupted."""
 
   def __init__(self, state_change_callback=None):
@@ -229,7 +224,7 @@ class ObservableFlag(QuietSet):
       initial_value: A boolean value with the initial state of the flag.
     """
     self._value = initial_value
-    super(ObservableFlag, self).__init__()
+    super().__init__()
 
   def toggle(self):
     """Toggles the value True/False."""
@@ -240,7 +235,7 @@ class ObservableFlag(QuietSet):
   def __iadd__(self, value):
     """Add new listeners and update them about the state."""
     listeners = to_iterable(value)
-    super(ObservableFlag, self).__iadd__(listeners)
+    super().__iadd__(listeners)
     for listener in listeners:
       listener(self._value)
     return self
@@ -258,7 +253,7 @@ class ObservableFlag(QuietSet):
     self._value = val
 
 
-class Timer(object):
+class Timer:
   """Measures time elapsed between two ticks."""
 
   def __init__(self):
@@ -288,7 +283,7 @@ class Timer(object):
     return self._measured_time
 
 
-class ErrorLogger(object):
+class ErrorLogger:
   """A context manager that catches and logs all errors."""
 
   def __init__(self, listeners):
@@ -322,7 +317,7 @@ class ErrorLogger(object):
     return self._error_found
 
 
-class NullErrorLogger(object):
+class NullErrorLogger:
   """A context manager that replaces an ErrorLogger.
 
   This error logger will pass all thrown errors through.

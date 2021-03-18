@@ -15,13 +15,9 @@
 
 """Randomization functions."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 from dm_control.mujoco.wrapper import mjbindings
 import numpy as np
-from six.moves import range
 
 
 def random_limited_quaternion(random, limit):

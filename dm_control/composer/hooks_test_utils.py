@@ -15,17 +15,12 @@
 
 """Utilities for testing environment hooks."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import collections
 import contextlib
 import inspect
 
 from dm_control import composer
 from dm_control import mjcf
-from six.moves import range
 
 
 def add_bodies_and_actuators(mjcf_model, num_actuators):
@@ -40,12 +35,12 @@ def add_bodies_and_actuators(mjcf_model, num_actuators):
     mjcf_model.actuator.add('position', joint=joint_y)
 
 
-class HooksTracker(object):
+class HooksTracker:
   """Helper class for tracking call order of callbacks."""
 
   def __init__(self, test_case, physics_timestep, control_timestep,
                *args, **kwargs):
-    super(HooksTracker, self).__init__(*args, **kwargs)
+    super().__init__(*args, **kwargs)
     self.tracked = False
     self._test_case = test_case
     self._call_count = collections.defaultdict(lambda: 0)
@@ -92,7 +87,7 @@ class HooksTracker(object):
   def initialize_episode_mjcf(self, random_state):
     """Implements `initialize_episode_mjcf` Composer callback."""
     if self._has_super:
-      super(HooksTracker, self).initialize_episode_mjcf(random_state)
+      super().initialize_episode_mjcf(random_state)
     if not self.tracked:
       return
     self.assertHooksNotCalled('after_compile',
@@ -106,7 +101,7 @@ class HooksTracker(object):
   def after_compile(self, physics, random_state):
     """Implements `after_compile` Composer callback."""
     if self._has_super:
-      super(HooksTracker, self).after_compile(physics, random_state)
+      super().after_compile(physics, random_state)
     if not self.tracked:
       return
     self.assertHooksCalledOnce('initialize_episode_mjcf')
@@ -123,7 +118,7 @@ class HooksTracker(object):
   def initialize_episode(self, physics, random_state):
     """Implements `initialize_episode` Composer callback."""
     if self._has_super:
-      super(HooksTracker, self).initialize_episode(physics, random_state)
+      super().initialize_episode(physics, random_state)
     if not self.tracked:
       return
     self.assertHooksCalledOnce('initialize_episode_mjcf',
@@ -140,7 +135,7 @@ class HooksTracker(object):
   def before_step(self, physics, *args):
     """Implements `before_step` Composer callback."""
     if self._has_super:
-      super(HooksTracker, self).before_step(physics, *args)
+      super().before_step(physics, *args)
     if not self.tracked:
       return
     self.assertHooksCalledOnce('initialize_episode_mjcf',
@@ -164,7 +159,7 @@ class HooksTracker(object):
   def before_substep(self, physics, *args):
     """Implements `before_substep` Composer callback."""
     if self._has_super:
-      super(HooksTracker, self).before_substep(physics, *args)
+      super().before_substep(physics, *args)
     if not self.tracked:
       return
     self.assertHooksCalledOnce('initialize_episode_mjcf',
@@ -188,7 +183,7 @@ class HooksTracker(object):
   def after_substep(self, physics, random_state):
     """Implements `after_substep` Composer callback."""
     if self._has_super:
-      super(HooksTracker, self).after_substep(physics, random_state)
+      super().after_substep(physics, random_state)
     if not self.tracked:
       return
     self.assertHooksCalledOnce('initialize_episode_mjcf',
@@ -212,7 +207,7 @@ class HooksTracker(object):
   def after_step(self, physics, random_state):
     """Implements `after_step` Composer callback."""
     if self._has_super:
-      super(HooksTracker, self).after_step(physics, random_state)
+      super().after_step(physics, random_state)
     if not self.tracked:
       return
     self.assertHooksCalledOnce('initialize_episode_mjcf',
@@ -258,20 +253,22 @@ class TrackedTask(HooksTracker, composer.NullTask):
   """A `composer.Task` that tracks call order of callbacks."""
 
   def __init__(self, physics_timestep, control_timestep, *args, **kwargs):
-    super(TrackedTask, self).__init__(physics_timestep=physics_timestep,
-                                      control_timestep=control_timestep,
-                                      *args, **kwargs)
-    self.set_timesteps(physics_timestep=physics_timestep,
-                       control_timestep=control_timestep)
+    super().__init__(
+        physics_timestep=physics_timestep,
+        control_timestep=control_timestep,
+        *args,
+        **kwargs)
+    self.set_timesteps(
+        physics_timestep=physics_timestep, control_timestep=control_timestep)
     add_bodies_and_actuators(self.root_entity.mjcf_model, num_actuators=4)
 
 
-class HooksTestMixin(object):
+class HooksTestMixin:
   """A mixin for an `absltest.TestCase` to track call order of callbacks."""
 
   def setUp(self):
     """Sets up the test case."""
-    super(HooksTestMixin, self).setUp()
+    super().setUp()
 
     self.num_episodes = 5
     self.steps_per_episode = 100

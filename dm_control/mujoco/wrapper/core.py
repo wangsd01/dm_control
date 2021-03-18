@@ -15,13 +15,10 @@
 
 """Main user-facing classes and utility functions for loading MuJoCo models."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import contextlib
 import ctypes
 import os
+import threading
 import weakref
 
 from absl import logging
@@ -34,7 +31,6 @@ from dm_control.mujoco.wrapper.mjbindings import mjlib
 from dm_control.mujoco.wrapper.mjbindings import types
 from dm_control.mujoco.wrapper.mjbindings import wrappers
 import numpy as np
-import six
 
 # Internal analytics import.
 # Unused internal import: resources.
@@ -71,6 +67,7 @@ if constants.mjVERSION_HEADER != mjlib.mj_version():
               "({1})".format(constants.mjVERSION_HEADER, mjlib.mj_version()))
 
 _REGISTERED = False
+_REGISTRATION_LOCK = threading.Lock()
 _ERROR_BUFSIZE = 1000
 
 # This is used to keep track of the `MJMODEL` pointer that was most recently
@@ -120,18 +117,26 @@ def _maybe_register_license(path=None):
   Raises:
     Error: If the license could not be registered.
   """
-  global _REGISTERED
-  if not _REGISTERED:
-    if path is None:
-      path = util.get_mjkey_path()
-    result = mjlib.mj_activate(util.to_binary_string(path))
-    if result == 1:
-      _REGISTERED = True
-      # Internal analytics of mj_activate.
-    elif result == 0:
-      raise Error("Could not register license.")
-    else:
-      raise Error("Unknown registration error (code: {})".format(result))
+  with _REGISTRATION_LOCK:
+    global _REGISTERED
+    if not _REGISTERED:
+      if path is None:
+        path = util.get_mjkey_path()
+      # TODO(b/176220357): Repeatedly activating a trial license results in
+      #                    errors (for example this could happen if
+      #                    `mj_activate` was already called by another library
+      #                    within the same process). To avoid such errors we
+      #                    unconditionally deactivate any active licenses before
+      #                    calling `mj_activate`.
+      mjlib.mj_deactivate()
+      result = mjlib.mj_activate(util.to_binary_string(path))
+      if result == 1:
+        _REGISTERED = True
+        # Internal analytics of mj_activate.
+      elif result == 0:
+        raise Error("Could not register license.")
+      else:
+        raise Error("Unknown registration error (code: {})".format(result))
 
 
 def _str2type(type_str):
@@ -219,7 +224,7 @@ def _temporary_vfs(filenames_and_contents):
   """
   vfs = types.MJVFS()
   mjlib.mj_defaultVFS(vfs)
-  for filename, contents in six.iteritems(filenames_and_contents):
+  for filename, contents in filenames_and_contents.items():
     if len(filename) > _MAX_VFS_FILENAME_CHARACTERS:
       raise ValueError(
           _VFS_FILENAME_TOO_LONG.format(
@@ -277,6 +282,13 @@ def _create_finalizer(ptr, free_func):
         return
       else:
         # Turn the address back into a pointer to be freed.
+        if ctypes.cast is None:
+          return
+          # `ctypes.cast` might be None if the interpreter is in the process of
+          # exiting. In this case it doesn't really matter whether or not we
+          # explicitly free the pointer, since any remaining pointers will be
+          # freed anyway when the process terminates. We bail out silently in
+          # order to avoid logging an unsightly (but harmless) error.
         temp_ptr = ctypes.cast(address, ptr_type)
         free_func(temp_ptr)
         logging.debug("Freed %s at %x", ptr_type.__name__, address)
@@ -443,7 +455,7 @@ class MjModel(wrappers.MjModelWrapper):
     Args:
       model_ptr: A `ctypes.POINTER` to an `mjbindings.types.MJMODEL` instance.
     """
-    super(MjModel, self).__init__(ptr=model_ptr)
+    super().__init__(ptr=model_ptr)
 
   def __getstate__(self):
     # All of MjModel's state is assumed to reside within the MuJoCo C struct.
@@ -584,7 +596,7 @@ class MjModel(wrappers.MjModelWrapper):
     old_bitmask = self.opt.disableflags
     new_bitmask = old_bitmask
     for flag in flags:
-      if isinstance(flag, six.string_types):
+      if isinstance(flag, str):
         try:
           field_name = "mjDSBL_" + flag.upper()
           bitmask = getattr(enums.mjtDisableBit, field_name)
@@ -635,7 +647,7 @@ class MjData(wrappers.MjDataWrapper):
     # Free resources when the ctypes pointer is garbage collected.
     _create_finalizer(data_ptr, mjlib.mj_deleteData)
 
-    super(MjData, self).__init__(data_ptr, model)
+    super().__init__(data_ptr, model)
 
   def __getstate__(self):
     # Note: we can replace this once a `saveData` MJAPI function exists.
@@ -659,10 +671,10 @@ class MjData(wrappers.MjDataWrapper):
     # Replace this once a `loadData` MJAPI function exists.
     self._model, static_fields, buffer_contents = state_tuple
     self.__init__(self.model)
-    for name, contents in six.iteritems(static_fields["struct_fields"]):
+    for name, contents in static_fields["struct_fields"].items():
       getattr(self, name)[:] = contents
 
-    for name, value in six.iteritems(static_fields["scalar_fields"]):
+    for name, value in static_fields["scalar_fields"].items():
       # Array and scalar values must be handled separately.
       try:
         getattr(self, name)[:] = value
@@ -748,7 +760,7 @@ class MjData(wrappers.MjDataWrapper):
   def _contact_buffer(self):
     """Cached structured array containing the full contact buffer."""
     contact_array = util.buf_to_npy(
-        super(MjData, self).contact, shape=(self._model.nconmax,))
+        super().contact, shape=(self._model.nconmax,))
     return contact_array
 
   @property
@@ -765,7 +777,7 @@ class MjvCamera(wrappers.MjvCameraWrapper):
   def __init__(self):
     ptr = ctypes.pointer(types.MJVCAMERA())
     mjlib.mjv_defaultCamera(ptr)
-    super(MjvCamera, self).__init__(ptr)
+    super().__init__(ptr)
 
 
 class MjvOption(wrappers.MjvOptionWrapper):
@@ -775,7 +787,7 @@ class MjvOption(wrappers.MjvOptionWrapper):
     mjlib.mjv_defaultOption(ptr)
     # Do not visualize rangefinder lines by default:
     ptr.contents.flags[enums.mjtVisFlag.mjVIS_RANGEFINDER] = False
-    super(MjvOption, self).__init__(ptr)
+    super().__init__(ptr)
 
 
 class UnmanagedMjrContext(wrappers.MjrContextWrapper):
@@ -789,7 +801,7 @@ class UnmanagedMjrContext(wrappers.MjrContextWrapper):
   def __init__(self):
     ptr = ctypes.pointer(types.MJRCONTEXT())
     mjlib.mjr_defaultContext(ptr)
-    super(UnmanagedMjrContext, self).__init__(ptr)
+    super().__init__(ptr)
 
 
 class MjrContext(wrappers.MjrContextWrapper):  # pylint: disable=missing-docstring
@@ -829,7 +841,7 @@ class MjrContext(wrappers.MjrContextWrapper):  # pylint: disable=missing-docstri
 
     _create_finalizer(ptr, finalize_mjr_context)
 
-    super(MjrContext, self).__init__(ptr)
+    super().__init__(ptr)
 
   def free(self):
     """Frees the native resources held by this MjrContext.
@@ -898,7 +910,7 @@ class MjvScene(wrappers.MjvSceneWrapper):  # pylint: disable=missing-docstring
     # Free resources when the ctypes pointer is garbage collected.
     _create_finalizer(scene_ptr, mjlib.mjv_freeScene)
 
-    super(MjvScene, self).__init__(scene_ptr)
+    super().__init__(scene_ptr)
 
   @contextlib.contextmanager
   def override_flags(self, overrides):
@@ -939,7 +951,7 @@ class MjvScene(wrappers.MjvSceneWrapper):  # pylint: disable=missing-docstring
   @util.CachedProperty
   def _geoms_buffer(self):
     """Cached recarray containing the full geom buffer."""
-    return util.buf_to_npy(super(MjvScene, self).geoms, shape=(self.maxgeom,))
+    return util.buf_to_npy(super().geoms, shape=(self.maxgeom,))
 
   @property
   def geoms(self):
@@ -952,7 +964,7 @@ class MjvPerturb(wrappers.MjvPerturbWrapper):
   def __init__(self):
     ptr = ctypes.pointer(types.MJVPERTURB())
     mjlib.mjv_defaultPerturb(ptr)
-    super(MjvPerturb, self).__init__(ptr)
+    super().__init__(ptr)
 
 
 class MjvFigure(wrappers.MjvFigureWrapper):
@@ -960,4 +972,4 @@ class MjvFigure(wrappers.MjvFigureWrapper):
   def __init__(self):
     ptr = ctypes.pointer(types.MJVFIGURE())
     mjlib.mjv_defaultFigure(ptr)
-    super(MjvFigure, self).__init__(ptr)
+    super().__init__(ptr)

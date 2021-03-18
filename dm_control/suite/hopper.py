@@ -15,10 +15,6 @@
 
 """Hopper domain."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import collections
 
 from dm_control import mujoco
@@ -103,13 +99,13 @@ class Hopper(base.Task):
         automatically (default).
     """
     self._hopping = hopping
-    super(Hopper, self).__init__(random=random)
+    super().__init__(random=random)
 
   def initialize_episode(self, physics):
     """Sets the state of the environment at the start of each episode."""
     randomizers.randomize_limited_and_rotational_joints(physics, self.random)
     self._timeout_progress = 0
-    super(Hopper, self).initialize_episode(physics)
+    super().initialize_episode(physics)
 
   def get_observation(self, physics):
     """Returns an observation of positions, velocities and touch sensors."""

@@ -15,10 +15,6 @@
 
 """Tasks involving assembly and/or disassembly of bricks."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import collections
 
 from absl import logging
@@ -39,8 +35,6 @@ from dm_control.manipulation.shared import workspaces
 from dm_control.mujoco.wrapper import mjbindings
 from dm_control.utils import rewards
 import numpy as np
-from six.moves import range
-from six.moves import zip
 
 mjlib = mjbindings.mjlib
 
@@ -223,13 +217,14 @@ class Stack(_Common):
       raise ValueError('`target_height` must be between 2 and {}, got {}.'
                        .format(num_bricks, target_height))
 
-    super(Stack, self).__init__(arena=arena,
-                                arm=arm,
-                                hand=hand,
-                                num_bricks=num_bricks,
-                                obs_settings=obs_settings,
-                                workspace=workspace,
-                                control_timestep=control_timestep)
+    super().__init__(
+        arena=arena,
+        arm=arm,
+        hand=hand,
+        num_bricks=num_bricks,
+        obs_settings=obs_settings,
+        workspace=workspace,
+        control_timestep=control_timestep)
 
     self._moveable_base = moveable_base
     self._randomize_order = randomize_order
@@ -325,13 +320,14 @@ class Reassemble(_Common):
     Raises:
       ValueError: If `num_bricks` is not between 2 and 6.
     """
-    super(Reassemble, self).__init__(arena=arena,
-                                     arm=arm,
-                                     hand=hand,
-                                     num_bricks=num_bricks,
-                                     obs_settings=obs_settings,
-                                     workspace=workspace,
-                                     control_timestep=control_timestep)
+    super().__init__(
+        arena=arena,
+        arm=arm,
+        hand=hand,
+        num_bricks=num_bricks,
+        obs_settings=obs_settings,
+        workspace=workspace,
+        control_timestep=control_timestep)
     self._randomize_initial_order = randomize_initial_order
     self._randomize_desired_order = randomize_desired_order
 

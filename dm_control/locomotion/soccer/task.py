@@ -15,9 +15,6 @@
 
 """"A task where players play a soccer game."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 from dm_control import composer
 from dm_control.locomotion.soccer import initializers
@@ -25,7 +22,6 @@ from dm_control.locomotion.soccer import observables as observables_lib
 from dm_control.locomotion.soccer import soccer_ball
 from dm_env import specs
 import numpy as np
-from six.moves import zip
 
 _THROW_IN_BALL_Z = 0.5
 
@@ -137,12 +133,12 @@ class Task(composer.Task):
     return entity_positions
 
   def after_compile(self, physics, random_state):
-    super(Task, self).after_compile(physics, random_state)
+    super().after_compile(physics, random_state)
     for camera in self._tracking_cameras:
       camera.after_compile(physics)
 
   def after_step(self, physics, random_state):
-    super(Task, self).after_step(physics, random_state)
+    super().after_step(physics, random_state)
     for camera in self._tracking_cameras:
       camera.after_step(self._tracked_entity_positions(physics))
 

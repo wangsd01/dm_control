@@ -15,21 +15,11 @@
 
 """Helper module that specifies the path to Kinova assets."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
+import importlib
 import os
-import six
 
-# pylint: disable=g-import-not-at-top
-if six.PY2:
-  import imp
-  _DM_CONTROL_ROOT = imp.find_module('dm_control')[1]
-else:
-  import importlib
-  _DM_CONTROL_ROOT = os.path.dirname(
-      importlib.util.find_spec('dm_control').origin)
-# pylint: enable=g-import-not-at-top
+
+_DM_CONTROL_ROOT = os.path.dirname(
+    importlib.util.find_spec('dm_control').origin)
 
 KINOVA_ROOT = os.path.join(_DM_CONTROL_ROOT, 'third_party/kinova')

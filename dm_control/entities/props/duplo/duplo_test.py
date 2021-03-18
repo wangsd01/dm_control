@@ -15,11 +15,6 @@
 
 """Tests for the Duplo prop."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-# Internal dependencies.
 from absl.testing import absltest
 from absl.testing import parameterized
 from dm_control import mjcf
@@ -27,7 +22,6 @@ from dm_control.entities.props import duplo
 from dm_control.entities.props.duplo import utils
 from dm_control.mujoco.wrapper import mjbindings
 import numpy as np
-from six.moves import range
 
 mjlib = mjbindings.mjlib
 

@@ -15,9 +15,6 @@
 
 """Suite-specific arena class."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 from dm_control import composer
 
@@ -32,7 +29,7 @@ class Standard(composer.Arena):
       name: (optional) A string, the name of this arena. If `None`, use the
         model name defined in the MJCF file.
     """
-    super(Standard, self)._build(name=name)
+    super()._build(name=name)
 
     # Add visual assets.
     self.mjcf_model.asset.add(

@@ -177,7 +177,7 @@ def find_data_files(package_dir, patterns, excludes=()):
 
 setup(
     name='dm_control',
-    version='0.0.327666647',
+    version='0.0.362111452',
     description='Continuous control environments and MuJoCo Python bindings.',
     author='DeepMind',
     license='Apache License, Version 2.0',
@@ -192,20 +192,19 @@ setup(
         'h5py',
         'labmaze',
         'lxml',
-        'numpy',
+        'numpy >= 1.9.0',
         'protobuf >= 3.12.2',
         'pyopengl >= 3.1.4',
         'pyparsing',
         'requests',
-        'setuptools',
+        'setuptools!=50.0.0',  # https://github.com/pypa/setuptools/issues/2350
         'scipy',
-        'six',
         'tqdm',
     ],
     tests_require=[
         'mock',
         'nose',
-        'pillow',
+        'pillow>=7.1.0',  # https://github.com/advisories/GHSA-8843-m7mw-mxqm
     ],
     test_suite='nose.collector',
     packages=find_packages(),

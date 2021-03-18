@@ -25,8 +25,6 @@ from dm_control import composer
 from dm_control.composer.observation import observable as base_observable
 from dm_control.locomotion.mocap import loader
 
-
-
 from dm_control.locomotion.tasks.reference_pose import datasets
 from dm_control.locomotion.tasks.reference_pose import types
 from dm_control.locomotion.tasks.reference_pose import utils
@@ -38,11 +36,10 @@ from dm_control.utils import transformations as tr
 from dm_env import specs
 
 import numpy as np
-import six
 import tree
 
 if typing.TYPE_CHECKING:
-  from dm_control.locomotion.walkers import base
+  from dm_control.locomotion.walkers import legacy_base
   from dm_control import mjcf
 
 mjlib = mjbindings.mjlib
@@ -60,25 +57,25 @@ def _strip_reference_prefix(dictionary: Mapping[Text, Any], prefix: Text):
   return new_dictionary
 
 
-@six.add_metaclass(abc.ABCMeta)
-class ReferencePosesTask(composer.Task):
+class ReferencePosesTask(composer.Task, metaclass=abc.ABCMeta):
   """Abstract base class for task that uses reference data."""
 
   def __init__(
       self,
-      walker: Union['base.Walker', Callable],  # pylint: disable=g-bare-generic
+      walker: Callable[..., 'legacy_base.Walker'],
       arena: composer.Arena,
       ref_path: Text,
       ref_steps: Sequence[int],
       dataset: Union[Text, types.ClipCollection],
       termination_error_threshold: float = 0.3,
       min_steps: int = 10,
-      reward_type: Text = 'default',
+      reward_type: Text = 'termination_reward',
       physics_timestep: float = DEFAULT_PHYSICS_TIMESTEP,
       always_init_at_clip_start: bool = False,
       proto_modifier: Optional[Any] = None,
       ghost_offset: Optional[Sequence[Union[int, float]]] = None,
       body_error_multiplier: Union[int, float] = 1.0,
+      actuator_force_coeff: float = 0.015,
   ):
     """Abstract task that uses reference data.
 
@@ -106,6 +103,7 @@ class ReferencePosesTask(composer.Task):
         the reference pose at the specified position offset.
       body_error_multiplier: A multiplier that is applied to the body error term
         when determining failure termination condition.
+      actuator_force_coeff: A coefficient for the actuator force reward channel.
     """
     self._ref_steps = np.sort(ref_steps)
     self._max_ref_step = self._ref_steps[-1]
@@ -116,6 +114,7 @@ class ReferencePosesTask(composer.Task):
     self._always_init_at_clip_start = always_init_at_clip_start
     self._ghost_offset = ghost_offset
     self._body_error_multiplier = body_error_multiplier
+    self._actuator_force_coeff = actuator_force_coeff
     logging.info('Reward type %s', reward_type)
 
     if isinstance(dataset, Text):
@@ -389,10 +388,10 @@ class ReferencePosesTask(composer.Task):
   def get_reference_rel_joints(self, physics: 'mjcf.Physics'):
     """Observation of the reference joints relative to walker."""
     del physics  # physics unused by reference observations.
-
     time_steps = self._time_step + self._ref_steps
-    return (self._clip_reference_features['joints'][time_steps] -
-            self._walker_joints).flatten()
+    diff = (self._clip_reference_features['joints'][time_steps] -
+            self._walker_joints)
+    return diff[:, self._walker.mocap_to_observable_joint_order].flatten()
 
   def get_reference_rel_bodies_pos_global(self, physics: 'mjcf.Physics'):
     """Observation of the reference bodies relative to walker."""
@@ -492,7 +491,8 @@ class ReferencePosesTask(composer.Task):
 
     joints_curr, joints_prev = (self._walker_features['joints'],
                                 self._walker_features_prev['joints'])
-    return (joints_curr - joints_prev) / self._control_timestep
+    return (joints_curr - joints_prev)[
+        self._walker.mocap_to_observable_joint_order]/self._control_timestep
 
   def get_clip_id(self, physics: 'mjcf.Physics'):
     """Observation of the clip id."""
@@ -532,6 +532,10 @@ class ReferencePosesTask(composer.Task):
         reference_features=self._current_reference_features,
         walker_features=self._walker_features,
         reference_observations=reference_observations)
+
+    if 'actuator_force' in self._reward_keys:
+      reward_channels['actuator_force'] = -self._actuator_force_coeff*np.mean(
+          np.square(self._walker.actuator_force(physics)))
 
     self._should_truncate = self._termination_error > self._termination_error_threshold
 
@@ -589,19 +593,20 @@ class MultiClipMocapTracking(ReferencePosesTask):
 
   def __init__(
       self,
-      walker: Union['base.Walker', Callable],  # pylint: disable=g-bare-generic
+      walker: Callable[..., 'legacy_base.Walker'],
       arena: composer.Arena,
       ref_path: Text,
       ref_steps: Sequence[int],
       dataset: Union[Text, Sequence[Any]],
       termination_error_threshold: float = 0.3,
       min_steps: int = 10,
-      reward_type: Text = 'default',
+      reward_type: Text = 'termination_reward',
       physics_timestep: float = DEFAULT_PHYSICS_TIMESTEP,
       always_init_at_clip_start: bool = False,
       proto_modifier: Optional[Any] = None,
       ghost_offset: Optional[Sequence[Union[int, float]]] = None,
       body_error_multiplier: Union[int, float] = 1.0,
+      actuator_force_coeff: float = 0.015,
   ):
     """Mocap tracking task.
 
@@ -629,8 +634,9 @@ class MultiClipMocapTracking(ReferencePosesTask):
         the reference pose at the specified position offset.
       body_error_multiplier: A multiplier that is applied to the body error term
         when determining failure termination condition.
+      actuator_force_coeff: A coefficient for the actuator force reward channel.
     """
-    super(MultiClipMocapTracking, self).__init__(
+    super().__init__(
         walker=walker,
         arena=arena,
         ref_path=ref_path,
@@ -643,14 +649,15 @@ class MultiClipMocapTracking(ReferencePosesTask):
         always_init_at_clip_start=always_init_at_clip_start,
         proto_modifier=proto_modifier,
         ghost_offset=ghost_offset,
-        body_error_multiplier=body_error_multiplier)
+        body_error_multiplier=body_error_multiplier,
+        actuator_force_coeff=actuator_force_coeff)
     self._walker.observables.add_observable(
         'time_in_clip',
         base_observable.Generic(self.get_normalized_time_in_clip))
 
   def after_step(self, physics: 'mjcf.Physics', random_state):
     """Update the data after step."""
-    super(MultiClipMocapTracking, self).after_step(physics, random_state)
+    super().after_step(physics, random_state)
     self._time_step += 1
 
     # Update the walker's data for this timestep.

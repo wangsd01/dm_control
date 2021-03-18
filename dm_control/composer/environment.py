@@ -15,10 +15,6 @@
 
 """RL environment classes for Composer tasks."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import warnings
 import weakref
 
@@ -28,7 +24,6 @@ from dm_control.composer import observation
 from dm_control.rl import control
 import dm_env
 import numpy as np
-from six.moves import range
 
 warnings.simplefilter('always', DeprecationWarning)
 
@@ -61,7 +56,7 @@ class EpisodeInitializationError(RuntimeError):
   """Raised by a `composer.Task` when it fails to initialize an episode."""
 
 
-class _Hook(object):
+class _Hook:
 
   __slots__ = ('entity_hooks', 'extra_hooks')
 
@@ -70,7 +65,7 @@ class _Hook(object):
     self.extra_hooks = []
 
 
-class _EnvironmentHooks(object):
+class _EnvironmentHooks:
   """Helper object that scans and memoizes various hooks in a task.
 
   This object exist to ensure that we do not incur a substantial overhead in
@@ -161,7 +156,7 @@ class _EnvironmentHooks(object):
       extra_hook(physics, random_state)
 
 
-class _CommonEnvironment(object):
+class _CommonEnvironment:
   """Common components for RL environments."""
 
   def __init__(self, task, time_limit=float('inf'), random_state=None,
@@ -300,7 +295,7 @@ class Environment(_CommonEnvironment, dm_env.Environment):
         exception will be allowed to propagate. Defaults to 1, i.e. no failure
         is allowed.
     """
-    super(Environment, self).__init__(
+    super().__init__(
         task=task,
         time_limit=time_limit,
         random_state=random_state,
@@ -421,7 +416,7 @@ class Environment(_CommonEnvironment, dm_env.Environment):
     if task_reward_spec is not None:
       return task_reward_spec
     else:
-      return super(Environment, self).reward_spec()
+      return super().reward_spec()
 
   def discount_spec(self):
     """Describes the discount returned by this environment.
@@ -438,7 +433,7 @@ class Environment(_CommonEnvironment, dm_env.Environment):
     if task_discount_spec is not None:
       return task_discount_spec
     else:
-      return super(Environment, self).discount_spec()
+      return super().discount_spec()
 
   def observation_spec(self):
     """Returns the observation specification for this environment.

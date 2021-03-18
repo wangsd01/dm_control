@@ -12,12 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ============================================================================
-# Lint as: python2, python3
 """Helpers for modifying a walker to match mocap data."""
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 from dm_control import composer
 from dm_control import mjcf
@@ -26,7 +21,7 @@ from dm_control.locomotion.walkers import rescale
 import numpy as np
 
 
-class WalkerInfo(object):
+class WalkerInfo:
   """Encapsulates routines that modify a walker to match mocap data."""
 
   def __init__(self, proto):

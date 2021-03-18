@@ -14,21 +14,14 @@
 # ============================================================================
 """Tests for `dm_control.mjcf.export_with_assets`."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import os
 import zipfile
-
-# Internal dependencies.
 
 from absl import flags
 from absl.testing import absltest
 from absl.testing import parameterized
 from dm_control import mjcf
 from dm_control.mujoco.wrapper import util
-import six
 
 FLAGS = flags.FLAGS
 
@@ -86,7 +79,7 @@ class ExportWithAssetsAsZipTest(parameterized.TestCase):
     # Check that the other files in the directory match the contents of the
     # model's `assets` dict.
     assets = mjcf_model.get_assets()
-    for asset_name, asset_contents in six.iteritems(assets):
+    for asset_name, asset_contents in assets.items():
       self.assertEqual(asset_contents,
                        zip_file_contents[os.path.join(model_name, asset_name)])
 

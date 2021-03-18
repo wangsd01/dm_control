@@ -32,22 +32,15 @@ Example usage:
            --output_dir=/path/to/mjbindings
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import collections
 import io
 import os
 
-# Internal dependencies.
 from absl import app
 from absl import flags
 from absl import logging
 from dm_control.autowrap import binding_generator
 from dm_control.autowrap import codegen_util
-
-import six
 
 _MJMODEL_H = "mjmodel.h"
 _MJXMACRO_H = "mjxmacro.h"
@@ -101,12 +94,12 @@ def main(unused_argv):
       consts_dict=consts_dict, hints_dict=hints_dict)
 
   # Parse enums.
-  for pth, src in six.iteritems(srcs):
+  for pth, src in srcs.items():
     if pth is not special_header_paths[_MJXMACRO_H]:
       parser.parse_enums(src)
 
   # Parse constants and type declarations.
-  for pth, src in six.iteritems(srcs):
+  for pth, src in srcs.items():
     if pth is not special_header_paths[_MJXMACRO_H]:
       parser.parse_consts_typedefs(src)
 
@@ -114,17 +107,17 @@ def main(unused_argv):
   parser.parse_hints(srcs[special_header_paths[_MJXMACRO_H]])
 
   # Parse structs and function pointer type declarations.
-  for pth, src in six.iteritems(srcs):
+  for pth, src in srcs.items():
     if pth is not special_header_paths[_MJXMACRO_H]:
       parser.parse_structs_and_function_pointer_typedefs(src)
 
   # Parse functions.
-  for pth, src in six.iteritems(srcs):
+  for pth, src in srcs.items():
     if pth is not special_header_paths[_MJXMACRO_H]:
       parser.parse_functions(src)
 
   # Parse global strings and function pointers.
-  for pth, src in six.iteritems(srcs):
+  for pth, src in srcs.items():
     if pth is not special_header_paths[_MJXMACRO_H]:
       parser.parse_global_strings(src)
       parser.parse_function_pointers(src)

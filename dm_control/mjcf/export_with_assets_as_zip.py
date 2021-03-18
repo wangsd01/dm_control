@@ -14,14 +14,8 @@
 # ============================================================================
 """Saves Mujoco models with relevant assets in a .zip file."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import os
 import zipfile
-
-import six
 
 
 def export_with_assets_as_zip(mjcf_model, out_dir, model_name=None):
@@ -54,5 +48,5 @@ def export_with_assets_as_zip(mjcf_model, out_dir, model_name=None):
   if not os.path.exists(out_dir):
     os.makedirs(out_dir)
   with zipfile.ZipFile(os.path.join(out_dir, zip_name), 'w') as zip_file:
-    for filename, contents in six.iteritems(files_to_zip):
+    for filename, contents in files_to_zip.items():
       zip_file.writestr(os.path.join(model_name, filename), contents)

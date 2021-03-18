@@ -15,10 +15,6 @@
 
 """Decorators for Entity methods returning elements and observables."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import abc
 import threading
 
@@ -27,7 +23,7 @@ class cached_property(property):  # pylint: disable=invalid-name
   """A property that is evaluated only once per object instance."""
 
   def __init__(self, func, doc=None):
-    super(cached_property, self).__init__(fget=func, doc=doc)
+    super().__init__(fget=func, doc=doc)
     self.lock = threading.RLock()
 
   def __get__(self, obj, cls):

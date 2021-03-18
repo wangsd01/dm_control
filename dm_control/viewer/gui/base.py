@@ -14,22 +14,16 @@
 # ============================================================================
 """Utilities and base classes used exclusively in the gui package."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import abc
 import threading
 import time
 
 from dm_control.viewer import user_input
-import six
 
 _DOUBLE_CLICK_INTERVAL = 0.25  # seconds
 
 
-@six.add_metaclass(abc.ABCMeta)
-class InputEventsProcessor(object):
+class InputEventsProcessor(metaclass=abc.ABCMeta):
   """Thread safe input events processor."""
 
   def __init__(self):
@@ -65,7 +59,7 @@ class InputEventsProcessor(object):
       event()
 
 
-class DoubleClickDetector(object):
+class DoubleClickDetector:
   """Detects double click events."""
 
   def __init__(self):

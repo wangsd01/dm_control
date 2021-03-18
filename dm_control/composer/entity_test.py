@@ -15,12 +15,7 @@
 
 """Tests for composer.Entity."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import itertools
-# Internal dependencies.
 
 from absl.testing import absltest
 from absl.testing import parameterized
@@ -30,8 +25,6 @@ from dm_control.composer import define
 from dm_control.composer import entity
 from dm_control.composer.observation.observable import base as observable
 import numpy as np
-import six
-from six.moves import range
 
 _NO_ROTATION = (1, 0, 0, 0)  # Tests support for non-arrays and non-floats.
 _NINETY_DEGREES_ABOUT_X = np.array(
@@ -88,7 +81,7 @@ class TestEntityObservables(entity.Observables):
 class EntityTest(parameterized.TestCase):
 
   def setUp(self):
-    super(EntityTest, self).setUp()
+    super().setUp()
     self.entity = TestEntity()
 
   def testNumObservables(self):
@@ -155,20 +148,19 @@ class EntityTest(parameterized.TestCase):
     for obs in self.entity.observables.as_dict().values():
       self.assertEqual(obs.update_interval, 2)
       self.assertEqual(obs.delay, 1)
-      self.assertEqual(obs.buffer_size, None)
-      self.assertEqual(obs.aggregator, None)
-      self.assertEqual(obs.corruptor, None)
+      self.assertIsNone(obs.buffer_size)
+      self.assertIsNone(obs.aggregator)
+      self.assertIsNone(obs.corruptor)
 
   def testObservableOptionsInvalidName(self):
     options = {'asdf': None}
-    with six.assertRaisesRegex(
-        self, KeyError, 'No observable with name \'asdf\''):
+    with self.assertRaisesRegex(KeyError, 'No observable with name \'asdf\''):
       self.entity.observables.set_options(options)
 
   def testObservableInvalidOptions(self):
     options = {'observable0': {'asdf': 2}}
-    with six.assertRaisesRegex(self, AttributeError,
-                               'Cannot add attribute asdf in configure.'):
+    with self.assertRaisesRegex(AttributeError,
+                                'Cannot add attribute asdf in configure.'):
       self.entity.observables.set_options(options)
 
   def testObservableOptions(self):
@@ -186,16 +178,16 @@ class EntityTest(parameterized.TestCase):
     observables = self.entity.observables.as_dict()
     self.assertEqual(observables['observable0'].update_interval, 2)
     self.assertEqual(observables['observable0'].delay, 3)
-    self.assertEqual(observables['observable0'].buffer_size, None)
-    self.assertEqual(observables['observable0'].aggregator, None)
-    self.assertEqual(observables['observable0'].corruptor, None)
+    self.assertIsNone(observables['observable0'].buffer_size)
+    self.assertIsNone(observables['observable0'].aggregator)
+    self.assertIsNone(observables['observable0'].corruptor)
     self.assertFalse(observables['observable0'].enabled)
 
     self.assertEqual(observables['observable1'].update_interval, 4)
     self.assertEqual(observables['observable1'].delay, 5)
-    self.assertEqual(observables['observable1'].buffer_size, None)
-    self.assertEqual(observables['observable1'].aggregator, None)
-    self.assertEqual(observables['observable1'].corruptor, None)
+    self.assertIsNone(observables['observable1'].buffer_size)
+    self.assertIsNone(observables['observable1'].aggregator)
+    self.assertIsNone(observables['observable1'].corruptor)
     self.assertFalse(observables['observable1'].enabled)
 
   def testObservableOptionsEntityConstructor(self):
@@ -213,16 +205,16 @@ class EntityTest(parameterized.TestCase):
     observables = ent.observables.as_dict()
     self.assertEqual(observables['observable0'].update_interval, 2)
     self.assertEqual(observables['observable0'].delay, 3)
-    self.assertEqual(observables['observable0'].buffer_size, None)
-    self.assertEqual(observables['observable0'].aggregator, None)
-    self.assertEqual(observables['observable0'].corruptor, None)
+    self.assertIsNone(observables['observable0'].buffer_size)
+    self.assertIsNone(observables['observable0'].aggregator)
+    self.assertIsNone(observables['observable0'].corruptor)
     self.assertFalse(observables['observable0'].enabled)
 
     self.assertEqual(observables['observable1'].update_interval, 4)
     self.assertEqual(observables['observable1'].delay, 5)
-    self.assertEqual(observables['observable1'].buffer_size, None)
-    self.assertEqual(observables['observable1'].aggregator, None)
-    self.assertEqual(observables['observable1'].corruptor, None)
+    self.assertIsNone(observables['observable1'].buffer_size)
+    self.assertIsNone(observables['observable1'].aggregator)
+    self.assertIsNone(observables['observable1'].corruptor)
     self.assertFalse(observables['observable1'].enabled)
 
   def testObservablePartialOptions(self):
@@ -231,16 +223,16 @@ class EntityTest(parameterized.TestCase):
     observables = self.entity.observables.as_dict()
     self.assertEqual(observables['observable0'].update_interval, 2)
     self.assertEqual(observables['observable0'].delay, 3)
-    self.assertEqual(observables['observable0'].buffer_size, None)
-    self.assertEqual(observables['observable0'].aggregator, None)
-    self.assertEqual(observables['observable0'].corruptor, None)
+    self.assertIsNone(observables['observable0'].buffer_size)
+    self.assertIsNone(observables['observable0'].aggregator)
+    self.assertIsNone(observables['observable0'].corruptor)
     self.assertFalse(observables['observable0'].enabled)
 
     self.assertEqual(observables['observable1'].update_interval, 1)
-    self.assertEqual(observables['observable1'].delay, None)
-    self.assertEqual(observables['observable1'].buffer_size, None)
-    self.assertEqual(observables['observable1'].aggregator, None)
-    self.assertEqual(observables['observable1'].corruptor, None)
+    self.assertIsNone(observables['observable1'].delay)
+    self.assertIsNone(observables['observable1'].buffer_size)
+    self.assertIsNone(observables['observable1'].aggregator)
+    self.assertIsNone(observables['observable1'].corruptor)
     self.assertFalse(observables['observable1'].enabled)
 
   def testAttach(self):
@@ -268,7 +260,7 @@ class EntityTest(parameterized.TestCase):
     entities[0].attach(entities[3])
 
     entities[1].detach()
-    with six.assertRaisesRegex(self, RuntimeError, 'not attached'):
+    with self.assertRaisesRegex(RuntimeError, 'not attached'):
       entities[1].detach()
 
     self.assertIsNone(entities[0].parent)

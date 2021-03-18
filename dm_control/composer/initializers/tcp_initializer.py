@@ -15,15 +15,10 @@
 
 """An initializer that sets the pose of a hand's tool center point."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 from dm_control import composer
 from dm_control import mjcf
 from dm_control.composer import variation
 from dm_control.entities.manipulators import base
-from six.moves import range
 
 
 _REJECTION_SAMPLING_FAILED = (
@@ -82,7 +77,7 @@ class ToolCenterPointInitializer(composer.Initializer):
         sampled pose, up to `max_ik_attempts` may be performed in order to find
         an IK solution satisfying this pose.
     """
-    super(ToolCenterPointInitializer, self).__init__()
+    super().__init__()
     self._arm = arm
     self._hand = hand
     self._position = position

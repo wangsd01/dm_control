@@ -14,17 +14,13 @@
 # ============================================================================
 """Environment's execution runtime."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import collections
 import copy
+import enum
+
 from dm_control.mujoco.wrapper import mjbindings
 from dm_control.viewer import util
-import enum
 import numpy as np
-import six
 
 mjlib = mjbindings.mjlib
 
@@ -54,11 +50,11 @@ def _get_default_action(action_spec):
   """
   if isinstance(action_spec, (list, tuple)):
     return tuple(_get_default_action(spec) for spec in action_spec)
-  elif isinstance(action_spec, collections.MutableMapping):
+  elif isinstance(action_spec, collections.abc.MutableMapping):
     # Clones the Mapping, preserving type and key order.
     result = copy.copy(action_spec)
 
-    for key, value in six.iteritems(action_spec):
+    for key, value in action_spec.items():
       result[key] = _get_default_action(value)
 
     return result
@@ -85,7 +81,7 @@ class State(enum.Enum):
   RESTARTING = 4
 
 
-class Runtime(object):
+class Runtime:
   """Base Runtime class.
 
   Attributes:

@@ -15,10 +15,6 @@
 
 """Humanoid Domain."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import collections
 
 from dm_control import mujoco
@@ -151,7 +147,7 @@ class Humanoid(base.Task):
     """
     self._move_speed = move_speed
     self._pure_state = pure_state
-    super(Humanoid, self).__init__(random=random)
+    super().__init__(random=random)
 
   def initialize_episode(self, physics):
     """Sets the state of the environment at the start of each episode.
@@ -167,7 +163,7 @@ class Humanoid(base.Task):
       # Check for collisions.
       physics.after_reset()
       penetrating = physics.data.ncon > 0
-    super(Humanoid, self).initialize_episode(physics)
+    super().initialize_episode(physics)
 
   def get_observation(self, physics):
     """Returns either the pure state or a set of egocentric features."""

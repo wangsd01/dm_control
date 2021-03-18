@@ -14,22 +14,17 @@
 # ============================================================================
 """Tests for the views.py module."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 from absl.testing import absltest
 from dm_control.viewer import views
 import mock
 import numpy as np
-import six
-from six.moves import range
 
 
 class ColumnTextViewTest(absltest.TestCase):
 
   def setUp(self):
-    super(ColumnTextViewTest, self).setUp()
+    super().setUp()
     self.model = mock.MagicMock()
     self.view = views.ColumnTextView(self.model)
 
@@ -53,7 +48,7 @@ class ColumnTextViewTest(absltest.TestCase):
 class MujocoDepthBufferTests(absltest.TestCase):
 
   def setUp(self):
-    super(MujocoDepthBufferTests, self).setUp()
+    super().setUp()
     self.component = views.MujocoDepthBuffer()
 
     self.context = mock.MagicMock()
@@ -91,7 +86,7 @@ class MujocoDepthBufferTests(absltest.TestCase):
 class ViewportLayoutTest(absltest.TestCase):
 
   def setUp(self):
-    super(ViewportLayoutTest, self).setUp()
+    super().setUp()
     self.layout = views.ViewportLayout()
 
     self.context = mock.MagicMock()
@@ -139,7 +134,7 @@ class ViewportLayoutTest(absltest.TestCase):
     self.layout._views = {mock.MagicMock(spec=views.BaseViewportView): pos
                           for pos in positions}
     self.layout.render(self.context, self.viewport)
-    for view, location in six.iteritems(self.layout._views):
+    for view, location in self.layout._views.items():
       view.render.assert_called_once()
       self.assertEqual(location, view.render.call_args[0][2])
 

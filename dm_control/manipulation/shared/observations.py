@@ -15,14 +15,8 @@
 
 """Shared configuration options for observations."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import collections
-
 import numpy as np
-import six
 
 
 class ObservableSpec(collections.namedtuple(
@@ -118,7 +112,7 @@ def make_options(obs_settings, obs_names):
     A nested dict containing `{observable_name: {option_name: value}}`.
   """
   observable_options = {}
-  for category, spec in six.iteritems(obs_settings._asdict()):
+  for category, spec in obs_settings._asdict().items():
     for observable_name in getattr(obs_names, category):
       observable_options[observable_name] = spec._asdict()
   return observable_options

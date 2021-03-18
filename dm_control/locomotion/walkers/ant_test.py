@@ -14,9 +14,6 @@
 # ============================================================================
 """Tests for the Ant."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 from absl.testing import absltest
 from absl.testing import parameterized
@@ -26,9 +23,7 @@ from dm_control.composer.observation.observable import base as observable_base
 from dm_control.locomotion.arenas import corridors as corr_arenas
 from dm_control.locomotion.tasks import corridors as corr_tasks
 from dm_control.locomotion.walkers import ant
-
 import numpy as np
-from six.moves import range
 
 _CONTROL_TIMESTEP = .02
 _PHYSICS_TIMESTEP = 0.005

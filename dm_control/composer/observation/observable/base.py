@@ -15,16 +15,11 @@
 
 """Classes representing observables."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import abc
 import functools
 
 from dm_env import specs
 import numpy as np
-import six
 
 
 def _make_aggregator(np_reducer_func, bounds_preserving):
@@ -56,8 +51,7 @@ def _get_aggregator(name_or_callable):
     return name_or_callable
 
 
-@six.add_metaclass(abc.ABCMeta)
-class Observable(object):
+class Observable(metaclass=abc.ABCMeta):
   """Abstract base class for an observable."""
 
   def __init__(self, update_interval, buffer_size, delay,
@@ -153,7 +147,7 @@ class Observable(object):
     Raises:
       AttributeError: If kwargs contained an attribute not in the observable.
     """
-    for key, value in six.iteritems(kwargs):
+    for key, value in kwargs.items():
       if not hasattr(self, key):
         raise AttributeError('Cannot add attribute %s in configure.' % key)
       self.__setattr__(key, value)
@@ -192,8 +186,7 @@ class Generic(Observable):
         operates on corrupted observations.
     """
     self._raw_callable = raw_observation_callable
-    super(Generic, self).__init__(
-        update_interval, buffer_size, delay, aggregator, corruptor)
+    super().__init__(update_interval, buffer_size, delay, aggregator, corruptor)
 
   def _callable(self, physics):
     return lambda: self._raw_callable(physics)
@@ -235,8 +228,7 @@ class MujocoFeature(Observable):
     """
     self._kind = kind
     self._feature_name = feature_name
-    super(MujocoFeature, self).__init__(
-        update_interval, buffer_size, delay, aggregator, corruptor)
+    super().__init__(update_interval, buffer_size, delay, aggregator, corruptor)
 
   def _callable(self, physics):
     named_indexer_for_kind = physics.named.data.__getattribute__(self._kind)
@@ -289,8 +281,7 @@ class MujocoCamera(Observable):
     self._n_channels = 1 if depth else 3
     self._dtype = np.float32 if depth else np.uint8
     self._depth = depth
-    super(MujocoCamera, self).__init__(
-        update_interval, buffer_size, delay, aggregator, corruptor)
+    super().__init__(update_interval, buffer_size, delay, aggregator, corruptor)
 
   @property
   def height(self):

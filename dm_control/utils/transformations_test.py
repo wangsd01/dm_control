@@ -24,7 +24,6 @@ from dm_control.mujoco.wrapper import mjbindings
 from dm_control.utils import transformations
 
 import numpy as np
-from six.moves import range
 
 mjlib = mjbindings.mjlib
 
@@ -34,7 +33,7 @@ _NUM_RANDOM_SAMPLES = 1000
 class TransformationsTest(parameterized.TestCase):
 
   def __init__(self, *args, **kwargs):
-    super(TransformationsTest, self).__init__(*args, **kwargs)
+    super().__init__(*args, **kwargs)
     self._random_state = np.random.RandomState()
 
   @parameterized.parameters(

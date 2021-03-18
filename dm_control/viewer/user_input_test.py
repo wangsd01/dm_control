@@ -14,9 +14,6 @@
 # ============================================================================
 """Tests for the user_input module."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 from absl.testing import absltest
 from dm_control.viewer import user_input
@@ -26,7 +23,7 @@ import mock
 class InputMapTests(absltest.TestCase):
 
   def setUp(self):
-    super(InputMapTests, self).setUp()
+    super().setUp()
     self.mouse = mock.MagicMock()
     self.keyboard = mock.MagicMock()
     self.input_map = user_input.InputMap(self.mouse, self.keyboard)

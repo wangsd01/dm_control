@@ -15,10 +15,6 @@
 
 """Tasks where the goal is to elevate a prop."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import collections
 import itertools
 
@@ -64,7 +60,7 @@ _BOX_WORKSPACE = _LiftWorkspace(
 _DISTANCE_TO_LIFT = 0.3
 
 
-class _VertexSitesMixin(object):
+class _VertexSitesMixin:
   """Mixin class that adds sites corresponding to the vertices of a box."""
 
   def _add_vertex_sites(self, box_geom_or_site):
@@ -90,7 +86,7 @@ class _BoxWithVertexSites(props.Primitive, _VertexSitesMixin):
   """Subclass of `Box` with sites marking the vertices of the box geom."""
 
   def _build(self, *args, **kwargs):
-    super(_BoxWithVertexSites, self)._build(*args, geom_type='box', **kwargs)
+    super()._build(*args, geom_type='box', **kwargs)
     self._add_vertex_sites(self.geom)
 
 
@@ -98,7 +94,7 @@ class _DuploWithVertexSites(props.Duplo, _VertexSitesMixin):
   """Subclass of `Duplo` with sites marking the vertices of its sensor site."""
 
   def _build(self, *args, **kwargs):
-    super(_DuploWithVertexSites, self)._build(*args, **kwargs)
+    super()._build(*args, **kwargs)
     self._add_vertex_sites(self.mjcf_model.find('site', 'bounding_box'))
 
 

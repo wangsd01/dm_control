@@ -27,23 +27,18 @@ dedicated thread on which the OpenGL context is created and made current. All
 subsequent rendering calls are then offloaded onto this dedicated thread.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import abc
 import collections
+from concurrent import futures
 import contextlib
 import threading
 
-from concurrent import futures
-import six
 
 _NOT_IN_CONTEXT = 'Cannot be called outside of an `execution_context`.'
 _ALREADY_TERMINATED = 'This executor has already been terminated.'
 
 
-class _FakeLock(object):
+class _FakeLock:
   """An object with the same API as `threading.Lock` but that does nothing."""
 
   def acquire(self, blocking=True):
@@ -62,8 +57,7 @@ class _FakeLock(object):
 _FAKE_LOCK = _FakeLock()
 
 
-@six.add_metaclass(abc.ABCMeta)
-class BaseRenderExecutor(object):
+class BaseRenderExecutor(metaclass=abc.ABCMeta):
   """An object that manages rendering calls for an OpenGL context.
 
   This class helps ensure that OpenGL calls are made on the correct thread. The
@@ -123,7 +117,7 @@ class PassthroughRenderExecutor(BaseRenderExecutor):
   """A no-op render executor that executes on the calling thread."""
 
   def __init__(self):
-    super(PassthroughRenderExecutor, self).__init__()
+    super().__init__()
     self._mutex = threading.RLock()
 
   @property
@@ -149,7 +143,7 @@ class PassthroughRenderExecutor(BaseRenderExecutor):
         self._terminated = True
 
 
-class _ThreadPoolExecutorPool(object):
+class _ThreadPoolExecutorPool:
   """A pool of reusable ThreadPoolExecutors."""
 
   def __init__(self):
@@ -175,7 +169,7 @@ class OffloadingRenderExecutor(BaseRenderExecutor):
   """A render executor that executes calls on a dedicated offload thread."""
 
   def __init__(self):
-    super(OffloadingRenderExecutor, self).__init__()
+    super().__init__()
     self._mutex = threading.RLock()
     self._executor = _THREAD_POOL_EXECUTOR_POOL.acquire()
     self._thread = self._executor.submit(threading.current_thread).result()

@@ -14,25 +14,21 @@
 # ============================================================================
 
 """Tests for `engine`."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
+import pickle
 import unittest
-# Internal dependencies.
+
 from absl.testing import absltest
 from absl.testing import parameterized
 from dm_control.mujoco import engine
 from dm_control.mujoco import wrapper
 from dm_control.mujoco.testing import assets
 from dm_control.mujoco.wrapper import mjbindings
+from dm_control.mujoco.wrapper.mjbindings import constants
 from dm_control.mujoco.wrapper.mjbindings import enums
 from dm_control.rl import control
 import mock
 import numpy as np
-import six
-from six.moves import cPickle
-from six.moves import range
 
 mjlib = mjbindings.mjlib
 
@@ -48,7 +44,7 @@ ASSETS = {
 class MujocoEngineTest(parameterized.TestCase):
 
   def setUp(self):
-    super(MujocoEngineTest, self).setUp()
+    super().setUp()
     self._physics = engine.Physics.from_xml_path(MODEL_PATH)
 
   def _assert_attributes_equal(self, actual_obj, expected_obj, attr_to_compare):
@@ -191,6 +187,60 @@ class MujocoEngineTest(parameterized.TestCase):
     selected = camera.select(coordinates)
     self.assertEqual(expected_selection, selected[:2])
 
+  @parameterized.parameters(
+      dict(camera_id='cam0', height=200, width=300),
+      dict(camera_id=1, height=300, width=200),
+      dict(camera_id=-1, height=400, width=400),
+  )
+  def testCameraMatrix(self, camera_id, height, width):
+    """Tests the camera_matrix() method.
+
+       Creates a model with two cameras and two small geoms. We render the scene
+       with one of the cameras and check that the geom locations, projected into
+       pixel space, are correct, using segmenation rendering.
+       xyz2pixels() shows how the transformation is used. For a description
+       of the camera matrix see https://en.wikipedia.org/wiki/Camera_matrix.
+
+    Args:
+      camera_id: One of the two cameras. Can be either integer or String.
+      height: The height of the image (pixels).
+      width: The width of the image (pixels).
+    """
+
+    def xyz2pixels(x, y, z, camera_matrix):
+      """Transforms from world coordinates to pixel coordinates."""
+      xs, ys, s = camera_matrix.dot(np.array([x, y, z, 1.0]))
+      return xs/s, ys/s
+
+    two_geoms_and_two_cameras = """
+    <mujoco>
+      <visual>
+        <global fovy="55"/>
+      </visual>
+      <worldbody>
+        <light name="top" pos="0 0 1"/>
+        <geom name="red" pos=".2 0 0" size=".005" rgba="1 0 0 1"/>
+        <geom name="green" pos=".2 .2 .1" size=".005" rgba="0 1 0 1"/>
+        <camera name="cam0" pos="1 .5 1" zaxis="1 .5 1" fovy="20"/>
+        <camera name="cam1" pos=".1 .1 1" xyaxes="1 1 0 -1 0 0"/>
+      </worldbody>
+    </mujoco>
+    """
+    physics = engine.Physics.from_xml_string(two_geoms_and_two_cameras)
+    camera = engine.Camera(physics, width=width, height=height,
+                           camera_id=camera_id)
+    camera_matrix = camera.matrix  # Get camera matrix.
+    pixels = camera.render(segmentation=True)  # Render a segmentation frame.
+    for geom_id in [0, 1]:
+      # Compute the location of the geom in pixel space using the camera matrix.
+      x, y = xyz2pixels(*physics.data.geom_xpos[geom_id], camera_matrix)
+      row = int(round(y))
+      column = int(round(x))
+      # Compare segmentation values of nearest pixel to corresponding geom.
+      [obj_id, obj_type] = pixels[row, column, :]
+      self.assertEqual(obj_type, enums.mjtObj.mjOBJ_GEOM)
+      self.assertEqual(obj_id, geom_id)
+
   def testMovableCameraSetGetPose(self):
     height, width = 240, 320
 
@@ -222,13 +272,13 @@ class MujocoEngineTest(parameterized.TestCase):
     max_width = self._physics.model.vis.global_.offwidth
     max_height = self._physics.model.vis.global_.offheight
     max_camid = self._physics.model.ncam - 1
-    with six.assertRaisesRegex(self, ValueError, 'width'):
+    with self.assertRaisesRegex(ValueError, 'width'):
       self._physics.render(max_height, max_width + 1, camera_id=max_camid)
-    with six.assertRaisesRegex(self, ValueError, 'height'):
+    with self.assertRaisesRegex(ValueError, 'height'):
       self._physics.render(max_height + 1, max_width, camera_id=max_camid)
-    with six.assertRaisesRegex(self, ValueError, 'camera_id'):
+    with self.assertRaisesRegex(ValueError, 'camera_id'):
       self._physics.render(max_height, max_width, camera_id=max_camid + 1)
-    with six.assertRaisesRegex(self, ValueError, 'camera_id'):
+    with self.assertRaisesRegex(ValueError, 'camera_id'):
       self._physics.render(max_height, max_width, camera_id=-2)
 
   def testPhysicsRenderMethod(self):
@@ -411,7 +461,7 @@ class MujocoEngineTest(parameterized.TestCase):
 
   @parameterized.named_parameters(
       ('_copy', lambda x: x.copy()),
-      ('_pickle_and_unpickle', lambda x: cPickle.loads(cPickle.dumps(x))),
+      ('_pickle_and_unpickle', lambda x: pickle.loads(pickle.dumps(x))),
   )
   def testCopyOrPicklePhysics(self, func):
     for _ in range(10):
@@ -471,8 +521,8 @@ class MujocoEngineTest(parameterized.TestCase):
     physics = engine.Physics.from_xml_string(xml)
     spec = engine.action_spec(physics)
     self.assertEqual(np.float, spec.dtype)
-    np.testing.assert_array_equal(spec.minimum, [-np.inf, -1.0])
-    np.testing.assert_array_equal(spec.maximum, [np.inf, 2.0])
+    np.testing.assert_array_equal(spec.minimum, [-constants.mjMAXVAL, -1.0])
+    np.testing.assert_array_equal(spec.maximum, [constants.mjMAXVAL, 2.0])
 
   def _check_valid_rotation_matrix(self, data_field_name):
     name = 'foo'

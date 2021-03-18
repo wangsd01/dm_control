@@ -15,10 +15,6 @@
 
 """Classes to represent MJCF elements in the object model."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import collections
 import copy
 import os
@@ -34,8 +30,6 @@ from dm_control.mjcf import schema
 from dm_control.mujoco.wrapper import util
 from lxml import etree
 import numpy as np
-import six
-from six.moves import zip
 
 
 _raw_property = property  # pylint: disable=invalid-name
@@ -76,12 +70,12 @@ def property(method):  # pylint: disable=redefined-builtin
   def _mjcf_property(self):
     try:
       return method(self)
-    except:  # pylint: disable=bare-except
-      err_type, err, tb = sys.exc_info()
-      tb_next = tb.tb_next
+    except:
+      _, err, tb = sys.exc_info()
+      err_with_next_tb = err.with_traceback(tb.tb_next)
       if isinstance(err, AttributeError):
-        self._last_attribute_error = err_type, err, tb_next  # pylint: disable=protected-access
-      six.reraise(err_type, err, tb_next)
+        self._last_attribute_error = err_with_next_tb  # pylint: disable=protected-access
+      raise err_with_next_tb
   return _raw_property(_mjcf_property)
 
 
@@ -147,7 +141,7 @@ class _ElementImpl(base.Element):
       self._init_stack = debugging.get_current_stack_trace()
 
     with debugging.freeze_current_stack_trace():
-      for child_spec in six.itervalues(self._spec.children):
+      for child_spec in self._spec.children.values():
         if not (child_spec.repeated or child_spec.on_demand):
           self._children.append(_make_element(spec=child_spec, parent=self))
 
@@ -155,10 +149,10 @@ class _ElementImpl(base.Element):
         attributes[constants.CLASS] = attributes[constants.DCLASS]
         del attributes[constants.DCLASS]
 
-      for attribute_name in six.iterkeys(attributes):
+      for attribute_name in attributes.keys():
         self._check_valid_attribute(attribute_name)
 
-      for attribute_spec in six.itervalues(self._spec.attributes):
+      for attribute_spec in self._spec.attributes.values():
         value = None
         # Some Reference attributes refer to a namespace that is specified
         # via another attribute. We therefore have to set things up for
@@ -182,16 +176,15 @@ class _ElementImpl(base.Element):
               conflict_allowed=attribute_spec.conflict_allowed,
               conflict_behavior=attribute_spec.conflict_behavior,
               parent=self, value=value, **attribute_spec.other_kwargs)
-        except:  # pylint: disable=bare-except
+        except:
           # On failure, clear attributes already created
-          for attribute_obj in six.itervalues(self._attributes):
+          for attribute_obj in self._attributes.values():
             attribute_obj._force_clear()  # pylint: disable=protected-access
           # Then raise a meaningful error
-          err_type, err, traceback = sys.exc_info()
-          message = (
-              'during initialization of attribute {!r} of element <{}>: {}'
-              .format(attribute_spec.name, self._spec.name, err))
-          six.reraise(err_type, err_type(message), traceback)
+          err_type, err, tb = sys.exc_info()
+          raise err_type(
+              f'during initialization of attribute {attribute_spec.name!r} of '
+              f'element <{self._spec.name}>: {err}').with_traceback(tb)
 
   def get_init_stack(self):
     """Gets the stack trace where this element was first initialized."""
@@ -202,7 +195,7 @@ class _ElementImpl(base.Element):
     """Gets a dict of stack traces where each attribute was last modified."""
     return collections.OrderedDict(
         [(name, self._attributes[name].last_modified_stack)
-         for name in six.iterkeys(self._spec.attributes)])
+         for name in self._spec.attributes])
 
   def is_same_as(self, other):
     """Checks whether another element is semantically equivalent to this one.
@@ -235,7 +228,7 @@ class _ElementImpl(base.Element):
     if other is None or other.spec != self._spec:
       return False
 
-    for attribute_name in six.iterkeys(self._spec.attributes):
+    for attribute_name in self._spec.attributes.keys():
       attribute = self._attributes[attribute_name]
       other_attribute = getattr(other, attribute_name)
       if isinstance(attribute.value, base.Element):
@@ -263,7 +256,7 @@ class _ElementImpl(base.Element):
     Returns:
       A boolean
     """
-    for child_name, child_spec in six.iteritems(self._spec.children):
+    for child_name, child_spec in self._spec.children.items():
       child = self.get_children(child_name)
       other_child = getattr(other, child_name)
       if not child_spec.repeated:
@@ -291,7 +284,7 @@ class _ElementImpl(base.Element):
 
   def _restore_attributes_dict(self):
     if self._own_attributes is not None:
-      for attribute_name, attribute in six.iteritems(self._attributes):
+      for attribute_name, attribute in self._attributes.items():
         self._own_attributes[attribute_name].value = attribute.value
       self._attributes = self._own_attributes
       self._own_attributes = None
@@ -397,10 +390,10 @@ class _ElementImpl(base.Element):
       ValueError: if either `namespace` or `identifier` is not a string, or if
         `namespace` is not a valid namespace.
     """
-    if not isinstance(namespace, six.string_types):
+    if not isinstance(namespace, str):
       raise ValueError(
           '`namespace` should be a string: got {!r}'.format(namespace))
-    if not isinstance(identifier, six.string_types):
+    if not isinstance(identifier, str):
       raise ValueError(
           '`identifier` should be a string: got {!r}'.format(identifier))
     if namespace not in schema.FINDABLE_NAMESPACES:
@@ -523,7 +516,7 @@ class _ElementImpl(base.Element):
         lambda name: constants.DCLASS if name == constants.CLASS else name)
     return collections.OrderedDict(
         [(fix_attribute_name(name), self._get_attribute(name))
-         for name in six.iterkeys(self._spec.attributes)
+         for name in self._spec.attributes.keys()
          if self._get_attribute(name) is not None])
 
   def _set_attribute(self, attribute_name, value):
@@ -537,21 +530,20 @@ class _ElementImpl(base.Element):
       del kwargs[constants.DCLASS]
     old_values = []
     with debugging.freeze_current_stack_trace():
-      for attribute_name, new_value in six.iteritems(kwargs):
+      for attribute_name, new_value in kwargs.items():
         old_value = self._get_attribute(attribute_name)
         try:
           self._set_attribute(attribute_name, new_value)
           old_values.append((attribute_name, old_value))
-        except:  # pylint: disable=bare-except
+        except:
           # On failure, restore old attribute values for those already set.
           for name, old_value in old_values:
             self._set_attribute(name, old_value)
           # Then raise a meaningful error.
           err_type, err, tb = sys.exc_info()
-          message = (
-              'during assignment to attribute {!r} of element <{}>: {}'
-              .format(attribute_name, self._spec.name, err))
-          six.reraise(err_type, err_type(message), tb)
+          raise err_type(
+              f'during assignment to attribute {attribute_name!r} of '
+              f'element <{self._spec.name}>: {err}').with_traceback(tb)
 
   def _remove_attribute(self, attribute_name):
     self._check_valid_attribute(attribute_name)
@@ -616,9 +608,9 @@ class _ElementImpl(base.Element):
       # We therefore just re-raise the last AttributeError back to the user.
       # Note that self._last_attribute_error was set by our specially
       # instrumented @property decorator.
-      exc_info = self._last_attribute_error
+      exc = self._last_attribute_error
       self._last_attribute_error = None
-      six.reraise(*exc_info)  # pylint: disable=not-an-iterable
+      raise exc  # pylint: disable=raising-bad-type
     elif name in self._spec.children:
       return self.get_children(name)
     elif name in self._spec.attributes:
@@ -672,18 +664,18 @@ class _ElementImpl(base.Element):
     """Removes this element from the model."""
     self._check_attachments_on_remove(affect_attachments)
     if affect_attachments:
-      for attachment in six.itervalues(self._attachments):
+      for attachment in self._attachments.values():
         attachment.remove(affect_attachments=True)
     for child in list(self._children):
       child.remove(affect_attachments)
     if self._spec.repeated or self._spec.on_demand:
       self._parent._children.remove(self)  # pylint: disable=protected-access
-      for attribute in six.itervalues(self._attributes):
+      for attribute in self._attributes.values():
         attribute._force_clear()  # pylint: disable=protected-access
       self._parent = None
       self._is_removed = True
     else:
-      for attribute in six.itervalues(self._attributes):
+      for attribute in self._attributes.values():
         attribute._force_clear()  # pylint: disable=protected-access
     self.namescope.increment_revision()
 
@@ -693,7 +685,7 @@ class _ElementImpl(base.Element):
 
   def all_children(self):
     all_children = [child for child in self._children]
-    for attachment in six.itervalues(self._attachments):
+    for attachment in self._attachments.values():
       all_children += [child for child in attachment.all_children()
                        if child.spec.repeated]
     return all_children
@@ -721,7 +713,7 @@ class _ElementImpl(base.Element):
 
   def _attributes_to_xml(self, xml_element, prefix_root, debug_context=None):
     del debug_context  # Unused.
-    for attribute_name, attribute in six.iteritems(self._attributes):
+    for attribute_name, attribute in self._attributes.items():
       attribute_value = attribute.to_xml_string(prefix_root)
       if attribute_name == self._spec.identifier and attribute_value is None:
         xml_element.set(attribute_name, self.full_identifier)
@@ -840,8 +832,7 @@ class _ElementImpl(base.Element):
       child._detach(other_namescope)  # pylint: disable=protected-access
 
   def _check_conflicting_attributes(self, other, copying):
-    for attribute_name, other_attribute in six.iteritems(
-        other.get_attributes()):
+    for attribute_name, other_attribute in other.get_attributes().items():
       if attribute_name == constants.DCLASS:
         attribute_name = constants.CLASS
       if ((not self._attributes[attribute_name].conflict_allowed)
@@ -857,8 +848,7 @@ class _ElementImpl(base.Element):
 
   def _sync_attributes(self, other, copying):
     self._check_conflicting_attributes(other, copying)
-    for attribute_name, other_attribute in six.iteritems(
-        other.get_attributes()):
+    for attribute_name, other_attribute in other.get_attributes().items():
       if attribute_name == constants.DCLASS:
         attribute_name = constants.CLASS
 
@@ -881,9 +871,9 @@ class _ElementImpl(base.Element):
         self_child._attach(other_child, exclude_worldbody, dry_run)  # pylint: disable=protected-access
 
   def resolve_references(self):
-    for attribute in six.itervalues(self._attributes):
+    for attribute in self._attributes.values():
       if isinstance(attribute, attribute_types.Reference):
-        if attribute.value and isinstance(attribute.value, six.string_types):
+        if attribute.value and isinstance(attribute.value, str):
           referred = self.root.find(
               attribute.reference_namespace, attribute.value)
           if referred:
@@ -892,7 +882,7 @@ class _ElementImpl(base.Element):
       child.resolve_references()
 
   def _update_references(self, reference_dict):
-    for attribute in six.itervalues(self._attributes):
+    for attribute in self._attributes.values():
       if isinstance(attribute, attribute_types.Reference):
         if attribute.value in reference_dict:
           attribute.value = reference_dict[attribute.value]
@@ -971,7 +961,7 @@ class _AttachmentFrame(_ElementImpl):
       spec = schema.ATTACHMENT_FRAME
 
     spec_is_copied = False
-    for child_name, child_spec in six.iteritems(spec.children):
+    for child_name, child_spec in spec.children.items():
       if child_spec.namespace:
         if not spec_is_copied:
           spec = copy.deepcopy(spec)
@@ -983,10 +973,10 @@ class _AttachmentFrame(_ElementImpl):
 
     attributes = {}
     with debugging.freeze_current_stack_trace():
-      for attribute_name in six.iterkeys(spec.attributes):
+      for attribute_name in spec.attributes.keys():
         if hasattr(site, attribute_name):
           attributes[attribute_name] = getattr(site, attribute_name)
-    super(_AttachmentFrame, self).__init__(spec, parent, attributes)
+    super().__init__(spec, parent, attributes)
     self._site = site
     self._attachment = attachment
     self._attachments[attachment.namescope] = attachment.worldbody
@@ -998,8 +988,7 @@ class _AttachmentFrame(_ElementImpl):
     return prefix + self._attachment.namescope.name + constants.PREFIX_SEPARATOR
 
   def to_xml(self, prefix_root=None, debug_context=None):
-    xml_element = (
-        super(_AttachmentFrame, self).to_xml(prefix_root, debug_context))
+    xml_element = (super().to_xml(prefix_root, debug_context))
     xml_element.set('name', self.prefixed_identifier(prefix_root))
     return xml_element
 
@@ -1008,7 +997,7 @@ class _AttachmentFrame(_ElementImpl):
     return self.prefixed_identifier(self.namescope.root)
 
   def _detach(self, other_namescope):
-    super(_AttachmentFrame, self)._detach(other_namescope)
+    super()._detach(other_namescope)
     if other_namescope is self._attachment.namescope:
       self.namescope.remove('attachment_frame', self._attachment.namescope.name)
       self.namescope.remove('attached_model', self._attachment.namescope.name)
@@ -1025,8 +1014,7 @@ class _AttachmentFrameChild(_ElementImpl):
   __slots__ = []
 
   def to_xml(self, prefix_root=None, debug_context=None):
-    xml_element = (
-        super(_AttachmentFrameChild, self).to_xml(prefix_root, debug_context))
+    xml_element = (super().to_xml(prefix_root, debug_context))
     if self.spec.namespace is not None:
       if self.name:
         name = (self._parent.prefixed_identifier(prefix_root) +
@@ -1065,12 +1053,11 @@ class _DefaultElement(_ElementImpl):
 
   def to_xml(self, prefix_root=None, debug_context=None):
     prefix_root = prefix_root or self.namescope
-    xml_element = (
-        super(_DefaultElement, self).to_xml(prefix_root, debug_context))
+    xml_element = (super().to_xml(prefix_root, debug_context))
     if isinstance(self._parent, RootElement):
       root_default = etree.Element(self._spec.name)
       root_default.append(xml_element)
-      for attachment in six.itervalues(self._attachments):
+      for attachment in self._attachments.values():
         attachment_xml = attachment.to_xml(prefix_root, debug_context)
         for attachment_child_xml in attachment_xml:
           root_default.append(attachment_child_xml)
@@ -1128,7 +1115,7 @@ class RootElement(_ElementImpl):
     model = model or 'unnamed_model'
     self._namescope = namescope.NameScope(
         model, self, model_dir=model_dir, assets=assets)
-    super(RootElement, self).__init__(
+    super().__init__(
         spec=schema.MUJOCO, parent=None, attributes={'model': model})
 
   def _attach(self, other, exclude_worldbody=False, dry_run=False):
@@ -1210,7 +1197,7 @@ class RootElement(_ElementImpl):
               if file_obj.value}
 
     # Recursively add assets belonging to attachments.
-    for attached_model in six.itervalues(self._attachments):
+    for attached_model in self._attachments.values():
       assets.update(attached_model.get_assets())
 
     return assets
@@ -1234,18 +1221,17 @@ class RootElement(_ElementImpl):
     return self._has_same_children_as(other)
 
 
-class _ElementListView(object):
+class _ElementListView:
   """A hybrid list/dict-like view to a group of repeated MJCF elements."""
 
   def __init__(self, spec, parent):
     self._spec = spec
     self._parent = parent
-    # pylint: disable=protected-access
-    self._elements = self._parent._children
+    self._elements = self._parent._children  # pylint: disable=protected-access
     self._scoped_elements = collections.OrderedDict(
         [(scope_namescope.name, getattr(scoped_parent, self._spec.name))
          for scope_namescope, scoped_parent
-         in six.iteritems(self._parent._attachments)])
+         in self._parent._attachments.items()])
 
   @property
   def spec(self):
@@ -1294,7 +1280,7 @@ class _ElementListView(object):
   def _full_list(self):
     out_list = [element for element in self._elements
                 if element.tag == self._spec.name]
-    for scoped_elements in six.itervalues(self._scoped_elements):
+    for scoped_elements in self._scoped_elements.values():
       out_list += scoped_elements[:]
     return out_list
 

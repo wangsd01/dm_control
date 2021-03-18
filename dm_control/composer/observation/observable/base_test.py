@@ -13,20 +13,13 @@
 # limitations under the License.
 # ============================================================================
 
-"""Tests for observable."""
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-# Internal dependencies.
+"""Tests for observable classes."""
 
 from absl.testing import absltest
 from dm_control import mujoco
 from dm_control.composer.observation import fake_physics
 from dm_control.composer.observation.observable import base
 import numpy as np
-import six
 
 
 _MJCF = """
@@ -146,7 +139,7 @@ class ObservableTest(absltest.TestCase):
 
   def testInvalidAggregatorName(self):
     name = 'invalid_name'
-    with six.assertRaisesRegex(self, KeyError, 'Unrecognized aggregator name'):
+    with self.assertRaisesRegex(KeyError, 'Unrecognized aggregator name'):
       _ = _FakeBaseObservable(update_interval=3, buffer_size=2, delay=1,
                               aggregator=name, corruptor=None)
 

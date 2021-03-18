@@ -19,7 +19,8 @@ from dm_control.utils import transformations as tr
 import numpy as np
 
 
-def add_walker(walker_fn, arena, name='walker', ghost=False, visible=True):
+def add_walker(walker_fn, arena, name='walker', ghost=False, visible=True,
+               position=(0, 0, 0)):
   """Create a walker."""
   walker = walker_fn(name=name)
 
@@ -46,7 +47,12 @@ def add_walker(walker_fn, arena, name='walker', ghost=False, visible=True):
       else:
         skin.set_attributes(rgba=(0.5, 0.5, 0.5, 0.))
 
-  walker.create_root_joints(arena.attach(walker))
+  if position == (0, 0, 0):
+    walker.create_root_joints(arena.attach(walker))
+  else:
+    spawn_site = arena.mjcf_model.worldbody.add('site', pos=position)
+    walker.create_root_joints(arena.attach(walker, spawn_site))
+    spawn_site.remove()
 
   return walker
 
@@ -102,8 +108,8 @@ def get_features(physics, walker):
 
   walker_features = {}
   root_pos, root_quat = walker.get_pose(physics)
-  walker_features['position'] = root_pos
-  walker_features['quaternion'] = root_quat
+  walker_features['position'] = np.array(root_pos)
+  walker_features['quaternion'] = np.array(root_quat)
   joints = np.array(physics.bind(walker.mocap_joints).qpos)
   walker_features['joints'] = joints
   freejoint_frame = mjcf.get_attachment_frame(walker.mjcf_model)
@@ -123,8 +129,8 @@ def get_features(physics, walker):
   xquat = np.array(physics.bind(walker_bodies).xquat)
   walker_features['body_quaternions'] = xquat
   root_vel, root_angvel = walker.get_velocity(physics)
-  walker_features['velocity'] = root_vel
-  walker_features['angular_velocity'] = root_angvel
+  walker_features['velocity'] = np.array(root_vel)
+  walker_features['angular_velocity'] = np.array(root_angvel)
   joints_vel = np.array(physics.bind(walker.mocap_joints).qvel)
   walker_features['joints_velocity'] = joints_vel
   return walker_features

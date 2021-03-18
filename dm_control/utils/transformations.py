@@ -14,13 +14,9 @@
 # ============================================================================
 """Rigid-body transformations including velocities and static forces."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 from absl import logging
 import numpy as np
-from six.moves import range
 
 # Constants used to determine when a rotation is close to a pole.
 _POLE_LIMIT = (1.0 - 1e-6)

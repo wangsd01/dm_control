@@ -15,15 +15,11 @@
 
 """Tests for core.py."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import ctypes
 import gc
 import os
+import pickle
 
-# Internal dependencies.
 from absl.testing import absltest
 from absl.testing import parameterized
 from dm_control import _render
@@ -33,9 +29,6 @@ from dm_control.mujoco.wrapper import mjbindings
 from dm_control.mujoco.wrapper.mjbindings import enums
 import mock
 import numpy as np
-import six
-from six.moves import cPickle
-from six.moves import range
 
 mjlib = mjbindings.mjlib
 
@@ -58,7 +51,7 @@ if not os.path.exists(OUT_DIR):
 class CoreTest(parameterized.TestCase):
 
   def setUp(self):
-    super(CoreTest, self).setUp()
+    super().setUp()
     self.model = core.MjModel.from_xml_path(HUMANOID_XML_PATH)
     self.data = core.MjData(self.model)
 
@@ -189,7 +182,7 @@ class CoreTest(parameterized.TestCase):
 
   @parameterized.named_parameters(
       ("_copy", lambda x: x.copy()),
-      ("_pickle_unpickle", lambda x: cPickle.loads(cPickle.dumps(x))),)
+      ("_pickle_unpickle", lambda x: pickle.loads(pickle.dumps(x))),)
   def testCopyOrPickleModel(self, func):
     timestep = 0.12345
     self.model.opt.timestep = timestep
@@ -202,7 +195,7 @@ class CoreTest(parameterized.TestCase):
 
   @parameterized.named_parameters(
       ("_copy", lambda x: x.copy()),
-      ("_pickle_unpickle", lambda x: cPickle.loads(cPickle.dumps(x))),)
+      ("_pickle_unpickle", lambda x: pickle.loads(pickle.dumps(x))),)
   def testCopyOrPickleData(self, func):
     for _ in range(10):
       mjlib.mj_step(self.model.ptr, self.data.ptr)
@@ -217,7 +210,7 @@ class CoreTest(parameterized.TestCase):
 
   @parameterized.named_parameters(
       ("_copy", lambda x: x.copy()),
-      ("_pickle_unpickle", lambda x: cPickle.loads(cPickle.dumps(x))),)
+      ("_pickle_unpickle", lambda x: pickle.loads(pickle.dumps(x))),)
   def testCopyOrPickleStructs(self, func):
     for _ in range(10):
       mjlib.mj_step(self.model.ptr, self.data.ptr)
@@ -242,9 +235,9 @@ class CoreTest(parameterized.TestCase):
     self.assertEqual(name, output_name)
 
   def testNamesIdsExceptions(self):
-    with six.assertRaisesRegex(self, core.Error, "does not exist"):
+    with self.assertRaisesRegex(core.Error, "does not exist"):
       self.model.name2id("nonexistent_body_name", "body")
-    with six.assertRaisesRegex(self, core.Error, "is not a valid object type"):
+    with self.assertRaisesRegex(core.Error, "is not a valid object type"):
       self.model.name2id("right_foot", "nonexistent_type_name")
 
   def testNamelessObject(self):
@@ -374,11 +367,11 @@ class CoreTest(parameterized.TestCase):
     self.assertLess(data.qvel[0], -0.1)
 
   def testDisableFlagsExceptions(self):
-    with six.assertRaisesRegex(self, ValueError, "not a valid flag name"):
+    with self.assertRaisesRegex(ValueError, "not a valid flag name"):
       with self.model.disable("invalid_flag_name"):
         pass
-    with six.assertRaisesRegex(self, ValueError,
-                               "not a value in `enums.mjtDisableBit`"):
+    with self.assertRaisesRegex(
+        ValueError, "not a value in `enums.mjtDisableBit`"):
       with self.model.disable(-99):
         pass
 
@@ -663,7 +656,7 @@ class AttributesTest(parameterized.TestCase):
     pass
 
   def setUp(self):
-    super(AttributesTest, self).setUp()
+    super().setUp()
     self.model = core.MjModel.from_xml_path(HUMANOID_XML_PATH)
     self.data = core.MjData(self.model)
 

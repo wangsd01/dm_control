@@ -15,13 +15,8 @@
 
 """pyparsing definitions and helper functions for parsing MuJoCo headers."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import pyparsing as pp
-import six
-from six.moves import map
+
 
 # NB: Don't enable parser memoization (`pp.ParserElement.enablePackrat()`),
 #     since this results in a ~6x slowdown.
@@ -126,8 +121,7 @@ ARRAY_DIM = pp.Combine(
 
 PTR = pp.Literal("*")
 EXTERN = pp.Keyword("extern")
-NATIVE_TYPENAME = pp.MatchFirst(
-    [pp.Keyword(n) for n in six.iterkeys(C_TO_CTYPES)])
+NATIVE_TYPENAME = pp.MatchFirst([pp.Keyword(n) for n in C_TO_CTYPES.keys()])
 
 # Macros.
 # ------------------------------------------------------------------------------

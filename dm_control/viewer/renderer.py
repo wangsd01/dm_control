@@ -14,10 +14,6 @@
 # ============================================================================
 """Renderer module."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import abc
 import contextlib
 
@@ -25,8 +21,6 @@ from dm_control.mujoco import wrapper
 from dm_control.mujoco.wrapper import mjbindings
 from dm_control.viewer import util
 import numpy as np
-import six
-from six.moves import range
 
 enums = mjbindings.enums
 mjlib = mjbindings.mjlib
@@ -53,8 +47,7 @@ _DEFAULT_RENDER_FLAGS[enums.mjtRndFlag.mjRND_REFLECTION] = 1
 _DEFAULT_RENDER_FLAGS[enums.mjtRndFlag.mjRND_SKYBOX] = 1
 
 
-@six.add_metaclass(abc.ABCMeta)
-class BaseRenderer(object):
+class BaseRenderer(metaclass=abc.ABCMeta):
   """A base class for component-based Mujoco Renderers implementations.
 
   Attributes:
@@ -83,8 +76,7 @@ class BaseRenderer(object):
       component.render(context, viewport)
 
 
-@six.add_metaclass(abc.ABCMeta)
-class Component(object):
+class Component(metaclass=abc.ABCMeta):
   """Components are a way to introduce extra rendering content.
 
   They are invoked after the main rendering pass, allowing to draw extra images
@@ -102,7 +94,7 @@ class Component(object):
     pass
 
 
-class NullRenderer(object):
+class NullRenderer:
   """A stub off-screen renderer used when no other renderer is available."""
 
   def __init__(self):
@@ -128,7 +120,7 @@ class OffScreenRenderer(BaseRenderer):
       model: instance of MjModel.
       surface: instance of dm_control.render.BaseContext.
     """
-    super(OffScreenRenderer, self).__init__()
+    super().__init__()
     self._surface = surface
     self._model = model
     self._mujoco_context = None
@@ -190,7 +182,7 @@ class OffScreenRenderer(BaseRenderer):
     return self._pixels
 
 
-class Perturbation(object):
+class Perturbation:
   """A proxy that allows to move a scene object."""
 
   def __init__(self, body_id, model, data, scene):
@@ -270,7 +262,7 @@ class Perturbation(object):
     return self._body_id
 
 
-class NullPerturbation(object):
+class NullPerturbation:
   """An empty perturbation.
 
   A null-object pattern, used to avoid cumbersome if clauses.
@@ -288,7 +280,7 @@ class NullPerturbation(object):
     return None
 
 
-class RenderSettings(object):
+class RenderSettings:
   """Renderer settings."""
 
   def __init__(self):
@@ -377,7 +369,7 @@ class RenderSettings(object):
         (self._visualization_options.label - 1) % enums.mjtLabel.mjNLABEL)
 
 
-class SceneCamera(object):
+class SceneCamera:
   """A camera used to navigate around and render the scene."""
 
   def __init__(self, model, data, options, settings=None):
@@ -568,7 +560,7 @@ class SceneCamera(object):
     return frustum_near > 0 and frustum_near < frustum_far
 
 
-class Viewport(object):
+class Viewport:
   """Render viewport."""
 
   def __init__(self, width=1, height=1):

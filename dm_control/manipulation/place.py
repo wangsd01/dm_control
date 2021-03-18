@@ -15,10 +15,6 @@
 
 """A task where the goal is to place a movable prop on top of a fixed prop."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import collections
 
 from dm_control import composer
@@ -38,7 +34,6 @@ from dm_control.manipulation.shared import tags
 from dm_control.manipulation.shared import workspaces
 from dm_control.utils import rewards
 import numpy as np
-import six
 
 
 _PlaceWorkspace = collections.namedtuple(
@@ -156,7 +151,7 @@ class Place(composer.Task):
     self._pedestal = Pedestal(cradle=cradle, target_radius=_TARGET_RADIUS)
     self._arena.attach(self._pedestal)
 
-    for obs in six.itervalues(self._pedestal.observables.as_dict()):
+    for obs in self._pedestal.observables.as_dict().values():
       obs.configure(**obs_settings.prop_pose._asdict())
 
     self._prop_placer = initializers.PropPlacer(

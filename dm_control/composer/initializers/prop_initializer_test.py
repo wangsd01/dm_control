@@ -15,12 +15,6 @@
 
 """Tests for prop_initializer."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-# Internal dependencies.
-
 from absl.testing import absltest
 from absl.testing import parameterized
 from dm_control import composer
@@ -31,8 +25,6 @@ from dm_control.composer.variation import distributions
 from dm_control.entities import props
 from dm_control.rl import control
 import numpy as np
-from six.moves import range
-from six.moves import zip
 
 
 def _make_spheres(num_spheres, radius, nconmax):

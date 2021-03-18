@@ -15,19 +15,12 @@
 
 """Abstract base class for a Composer task."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import abc
 import collections
 import copy
-import sys
 
 from dm_control import mujoco
 from dm_env import specs
-import six
-from six.moves import range
 
 
 def _check_timesteps_divisible(control_timestep, physics_timestep):
@@ -40,8 +33,7 @@ def _check_timesteps_divisible(control_timestep, physics_timestep):
   return rounded_num_steps
 
 
-@six.add_metaclass(abc.ABCMeta)
-class Task(object):
+class Task(metaclass=abc.ABCMeta):
   """Abstract base class for a Composer task."""
 
   @abc.abstractproperty
@@ -104,12 +96,10 @@ class Task(object):
   def _check_root_entity(self, callee_name):
     try:
       _ = self.root_entity
-    except:  # pylint: disable=bare-except
-      err_type, err, tb = sys.exc_info()
-      message = (
-          'call to `{}` made before `root_entity` is available;\n'
-          'original error message: {}'.format(callee_name, str(err)))
-      six.reraise(err_type, err_type(message), tb)
+    except Exception as effect:
+      cause = RuntimeError(
+          f'call to `{callee_name}` made before `root_entity` is available')
+      raise effect from cause
 
   @property
   def control_timestep(self):
@@ -241,7 +231,7 @@ class Task(object):
     The default implementation sets the control signal for the actuators in
     `physics` to be equal to `action`. Subclasses that override this method
     should ensure that the overriding method also sets the control signal before
-    returning, either by calling `super(..., self).before_step`, or by setting
+    returning, either by calling `super().before_step`, or by setting
     the control signal explicitly (e.g. in order to create a non-trivial mapping
     between `action` and the control signal).
 

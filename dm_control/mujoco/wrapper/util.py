@@ -15,10 +15,6 @@
 
 """Various helper functions and classes."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import ctypes
 import ctypes.util
 import functools
@@ -27,7 +23,6 @@ import platform
 import sys
 from dm_control import _render
 import numpy as np
-import six
 
 from dm_control.utils import io as resources
 
@@ -77,17 +72,15 @@ DEFAULT_ENCODING = sys.getdefaultencoding()
 
 def to_binary_string(s):
   """Convert text string to binary."""
-  if isinstance(s, six.binary_type):
+  if isinstance(s, bytes):
     return s
   return s.encode(DEFAULT_ENCODING)
 
 
 def to_native_string(s):
   """Convert a text or binary string to the native string format."""
-  if six.PY3 and isinstance(s, six.binary_type):
+  if isinstance(s, bytes):
     return s.decode(DEFAULT_ENCODING)
-  elif six.PY2 and isinstance(s, six.text_type):
-    return s.encode(DEFAULT_ENCODING)
   else:
     return s
 
@@ -109,7 +102,7 @@ def _maybe_load_linux_dynamic_deps(library_dir):
     else:
       libglew_path = ctypes.util.find_library("GLEW")
     ctypes.CDLL(libglew_path, ctypes.RTLD_GLOBAL)  # Also loads GL implicitly.
-
+# Google-internal libstdc++ loading.
 
 def get_mjlib():
   """Loads `libmujoco.so` and returns it as a `ctypes.CDLL` object."""
@@ -133,7 +126,7 @@ def get_mjkey_path():
   return _get_full_path(raw_path)
 
 
-class WrapperBase(object):
+class WrapperBase:
   """Base class for wrappers that provide getters/setters for ctypes structs."""
 
   # This is needed so that the __del__ methods of MjModel and MjData can still
@@ -162,7 +155,7 @@ class CachedProperty(property):
   """A property that is evaluated only once per object instance."""
 
   def __init__(self, func, doc=None):
-    super(CachedProperty, self).__init__(fget=func, doc=doc)
+    super().__init__(fget=func, doc=doc)
     self._name = func.__name__
 
   def __get__(self, obj, cls):

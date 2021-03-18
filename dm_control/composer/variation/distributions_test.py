@@ -15,16 +15,10 @@
 
 """Tests for distributions."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-# Internal dependencies.
 from absl.testing import absltest
 from absl.testing import parameterized
 from dm_control.composer.variation import distributions
 import numpy as np
-from six.moves import range
 
 RANDOM_SEED = 123
 NUM_ITERATIONS = 100
@@ -37,7 +31,7 @@ def _make_random_state():
 class DistributionsTest(parameterized.TestCase):
 
   def setUp(self):
-    super(DistributionsTest, self).setUp()
+    super().setUp()
     self._variation_random_state = _make_random_state()
     self._np_random_state = _make_random_state()
 

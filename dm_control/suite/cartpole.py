@@ -15,10 +15,6 @@
 
 """Cartpole domain."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import collections
 
 from dm_control import mujoco
@@ -29,7 +25,6 @@ from dm_control.utils import containers
 from dm_control.utils import rewards
 from lxml import etree
 import numpy as np
-from six.moves import range
 
 
 _DEFAULT_TIME_LIMIT = 10
@@ -177,7 +172,7 @@ class Balance(base.Task):
     """
     self._sparse = sparse
     self._swing_up = swing_up
-    super(Balance, self).__init__(random=random)
+    super().__init__(random=random)
 
   def initialize_episode(self, physics):
     """Sets the state of the environment at the start of each episode.
@@ -197,7 +192,7 @@ class Balance(base.Task):
       physics.named.data.qpos['slider'] = self.random.uniform(-.1, .1)
       physics.named.data.qpos[1:] = self.random.uniform(-.034, .034, nv - 1)
     physics.named.data.qvel[:] = 0.01 * self.random.randn(physics.model.nv)
-    super(Balance, self).initialize_episode(physics)
+    super().initialize_episode(physics)
 
   def get_observation(self, physics):
     """Returns an observation of the (bounded) physics state."""

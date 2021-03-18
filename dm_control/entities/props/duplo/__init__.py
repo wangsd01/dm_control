@@ -15,10 +15,6 @@
 
 """A 2x4 Duplo brick."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import collections
 import os
 
@@ -27,7 +23,6 @@ from dm_control import mjcf
 from dm_control.composer import define
 from dm_control.composer.observation import observable
 import numpy as np
-from six.moves import range
 
 _DUPLO_XML_PATH = os.path.join(os.path.dirname(__file__), 'duplo2x4.xml')
 

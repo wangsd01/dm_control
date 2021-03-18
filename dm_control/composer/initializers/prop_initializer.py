@@ -15,12 +15,6 @@
 
 """An initializer that places props at various poses."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-import sys
-
 from dm_control import composer
 from dm_control import mjcf
 from dm_control.composer import variation
@@ -28,8 +22,6 @@ from dm_control.composer.initializers import utils
 from dm_control.composer.variation import rotations
 from dm_control.rl import control
 import numpy as np
-import six
-from six.moves import range
 
 
 # Absolute velocity threshold for a prop joint to be considered settled.
@@ -74,7 +66,7 @@ class PropPlacer(composer.Initializer):
       max_settle_physics_time: (optional) When `settle_physics` is True, upper
         bound on time (in seconds) the physics simulation is advanced.
     """
-    super(PropPlacer, self).__init__()
+    super().__init__()
     self._props = props
     self._prop_joints = []
     for prop in props:
@@ -146,12 +138,11 @@ class PropPlacer(composer.Initializer):
 
     try:
       physics.forward()
-    except control.PhysicsError as e:
-      _, _, tb = sys.exc_info()
-      message = 'Despite disabling contact for all props in this initializer, '
-      '`physics.forward()` resulted in a `PhysicsError`: {}'.format(e)
-      new_exc = control.PhysicsError(message)
-      six.reraise(control.PhysicsError, new_exc, tb)
+    except control.PhysicsError as cause:
+      effect = control.PhysicsError(
+          'Despite disabling contact for all props in this initializer, '
+          '`physics.forward()` resulted in a `PhysicsError`')
+      raise effect from cause
 
     for prop in self._props:
 

@@ -15,11 +15,6 @@
 
 """Tests for dm_control.composer.props.position_detector."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-# Internal dependencies.
 from absl.testing import absltest
 from absl.testing import parameterized
 from dm_control import composer
@@ -31,7 +26,7 @@ import numpy as np
 class PositionDetectorTest(parameterized.TestCase):
 
   def setUp(self):
-    super(PositionDetectorTest, self).setUp()
+    super().setUp()
     self.arena = composer.Arena()
     self.props = [
         primitive.Primitive(geom_type='sphere', size=(0.1,)),

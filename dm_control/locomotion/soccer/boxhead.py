@@ -15,10 +15,7 @@
 
 """Walkers based on an actuated jumping ball."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
+import io
 import os
 
 from dm_control import composer
@@ -27,7 +24,6 @@ from dm_control.composer.observation import observable
 from dm_control.locomotion.walkers import legacy_base
 import numpy as np
 from PIL import Image
-import six
 
 from dm_control.utils import io as resources
 
@@ -88,14 +84,14 @@ def _asset_png_with_background_rgba_bytes(asset_fname, background_rgba):
 
   # Retrieve PNG image contents as a bytestring, convert to a numpy array.
   contents = resources.GetResource(os.path.join(_ASSETS_PATH, asset_fname))
-  digit_rgba = np.array(Image.open(six.BytesIO(contents)), dtype=np.double)
+  digit_rgba = np.array(Image.open(io.BytesIO(contents)), dtype=np.double)
 
   # Add solid background with `background_rgba`.
   blended = 255. * _alpha_blend(digit_rgba / 255., np.asarray(background_rgba))
 
   # Encode composite image array to a PNG bytestring.
   img = Image.fromarray(blended.astype(np.uint8), mode='RGBA')
-  buf = six.BytesIO()
+  buf = io.BytesIO()
   img.save(buf, format='PNG')
   png_encoding = buf.getvalue()
   buf.close()
@@ -108,7 +104,7 @@ class BoxHeadObservables(legacy_base.WalkerObservables):
 
   def __init__(self, entity, camera_resolution):
     self._camera_resolution = camera_resolution
-    super(BoxHeadObservables, self).__init__(entity)
+    super().__init__(entity)
 
   @composer.observable
   def egocentric_camera(self):
@@ -118,7 +114,7 @@ class BoxHeadObservables(legacy_base.WalkerObservables):
 
   @property
   def proprioception(self):
-    proprioception = super(BoxHeadObservables, self).proprioception
+    proprioception = super().proprioception
     if self._entity.observable_camera_joints:
       return proprioception + [self.camera_joints_pos, self.camera_joints_vel]
     return proprioception
@@ -184,7 +180,7 @@ class BoxHead(legacy_base.Walker):
     Raises:
       ValueError: if received invalid walker_id.
     """
-    super(BoxHead, self)._build(initializer=initializer)
+    super()._build(initializer=initializer)
     xml_path = os.path.join(_ASSETS_PATH, 'boxhead.xml')
     self._mjcf_root = mjcf.from_xml_string(resources.GetResource(xml_path, 'r'))
     if name:
@@ -274,7 +270,7 @@ class BoxHead(legacy_base.Walker):
       if self._root_joints is not None:
         physics.bind(self._root_joints).qpos = position
       else:
-        super(BoxHead, self).set_pose(physics, position, quaternion=None)
+        super().set_pose(physics, position, quaternion=None)
     physics.bind(self._mjcf_root.find_all('joint')).qpos = 0.
     if quaternion is not None:
       # This walker can only rotate along the z-axis, so we extract only that
@@ -307,7 +303,7 @@ class BoxHead(legacy_base.Walker):
                                  dtype=self.action_spec.dtype)
 
   def apply_action(self, physics, action, random_state):
-    super(BoxHead, self).apply_action(physics, action, random_state)
+    super().apply_action(physics, action, random_state)
 
     # Updates previous action.
     self._prev_action[:] = action

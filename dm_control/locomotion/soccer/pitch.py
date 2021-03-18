@@ -15,10 +15,6 @@
 
 """A soccer pitch with home/away goals and one field with position detection."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import colorsys
 import os
 
@@ -42,7 +38,7 @@ def _get_texture(name):
 
 
 _TOP_CAMERA_Y_PADDING_FACTOR = 1.1
-_TOP_CAMERA_DISTANCE = 100.
+_TOP_CAMERA_DISTANCE = 95.
 _WALL_HEIGHT = 10.
 _WALL_THICKNESS = .5
 _SIDE_WIDTH = 32. / 6.
@@ -261,7 +257,7 @@ class Goal(props.PositionDetector):
     # Force the underlying PositionDetector to a non visible site group.
     kwargs['visible'] = False
     # Make a Position_Detector.
-    super(Goal, self)._build(retain_substep_detections=True, **kwargs)
+    super()._build(retain_substep_detections=True, **kwargs)
 
     # Add goalpost geoms.
     size = kwargs['size']
@@ -293,19 +289,19 @@ class Goal(props.PositionDetector):
 
   def resize(self, pos, size):
     """Call PositionDetector.resize(), move the goal."""
-    super(Goal, self).resize(pos, size)
+    super().resize(pos, size)
     self._goalpost_radius = _goalpost_radius(size)
     self._move_goal(pos, size)
 
   def set_position(self, physics, pos):
     """Call PositionDetector.set_position(), move the goal."""
-    super(Goal, self).set_position(pos)
+    super().set_position(pos)
     size = 0.5*(self.upper - self.lower)
     self._move_goal(pos, size)
 
   def _update_detection(self, physics):
     """Call PositionDetector._update_detection(), then recolor the goalposts."""
-    super(Goal, self)._update_detection(physics)
+    super()._update_detection(physics)
     if self._detected and not self._previously_detected:
       physics.bind(self._goal_geoms).rgba = self.goalpost_detected_rgba
     elif self._previously_detected and not self._detected:
@@ -352,7 +348,7 @@ class Pitch(composer.Arena):
         a preset scheme for the hoarding colors.
       name: the name of this arena.
     """
-    super(Pitch, self)._build(name=name)
+    super()._build(name=name)
     self._size = size
     self._goal_size = goal_size
     self._top_camera_distance = top_camera_distance
@@ -365,8 +361,13 @@ class Pitch(composer.Arena):
         zaxis=[0, 0, 1],
         fovy=_top_down_cam_fovy(self._size, top_camera_distance))
 
-    # Ensure close up geoms are rendered by egocentric cameras.
-    self._mjcf_root.visual.map.znear = 0.0005
+    # Set the `extent`, an "average distance" to 0.1 * pitch length.
+    extent = 0.1 * max(self._size)
+    self._mjcf_root.statistic.extent = extent
+    self._mjcf_root.statistic.center = (0, 0, extent)
+    # The near and far clipping planes are scaled by `extent`.
+    self._mjcf_root.visual.map.zfar = 50             # 5 pitch lengths
+    self._mjcf_root.visual.map.znear = 0.1 / extent  # 10 centimeters
 
     # Add skybox.
     self._mjcf_root.asset.add(
@@ -385,7 +386,7 @@ class Pitch(composer.Arena):
     _reposition_corner_lights(self._corner_lights, size)
 
     # Increase shadow resolution, (default is 1024).
-    self._mjcf_root.visual.quality.shadowsize = 4096
+    self._mjcf_root.visual.quality.shadowsize = 8192
 
     # Build groundplane.
     if len(self._size) != 2:
@@ -633,7 +634,7 @@ class RandomizedPitch(Pitch):
       top_camera_distance: the distance of the top-down camera to the pitch.
       name: the name of this arena.
     """
-    super(RandomizedPitch, self).__init__(
+    super().__init__(
         size=max_size,
         goal_size=goal_size,
         top_camera_distance=top_camera_distance,
@@ -660,7 +661,7 @@ class RandomizedPitch(Pitch):
         size=goal_size)
 
   def initialize_episode_mjcf(self, random_state):
-    super(RandomizedPitch, self).initialize_episode_mjcf(random_state)
+    super().initialize_episode_mjcf(random_state)
     min_len, min_wid = self._min_size
     max_len, max_wid = self._max_size
 

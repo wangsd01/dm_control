@@ -15,10 +15,6 @@
 
 """An object that creates and updates buffers for enabled observables."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import collections
 import functools
 from absl import logging
@@ -27,15 +23,13 @@ from dm_control.composer import variation
 from dm_control.composer.observation import obs_buffer
 from dm_env import specs
 import numpy as np
-import six
-from six.moves import range
 
 DEFAULT_BUFFER_SIZE = 1
 DEFAULT_UPDATE_INTERVAL = 1
 DEFAULT_DELAY = 0
 
 
-class _EnabledObservable(object):
+class _EnabledObservable:
   """Encapsulates an enabled observable, its buffer, and its update schedule."""
 
   __slots__ = ('observable', 'observation_callable',
@@ -122,7 +116,7 @@ def _validate_structure(structure):
   return is_nested
 
 
-class Updater(object):
+class Updater:
   """Creates and updates buffers for enabled observables."""
 
   def __init__(self, observables, physics_steps_per_control_step=1,
@@ -143,7 +137,7 @@ class Updater(object):
       # Use `type(observables)` so that our output structure respects the
       # original dict subclass (e.g. OrderedDict).
       out_dict = type(observables)()
-      for key, value in six.iteritems(observables):
+      for key, value in observables.items():
         if value.enabled:
           out_dict[key] = _EnabledObservable(value, physics, random_state,
                                              self._strip_singleton_buffer_dim)
@@ -195,7 +189,7 @@ class Updater(object):
     def make_observation_spec_dict(enabled_dict):
       """Makes a dict of enabled observation specs from of observables."""
       out_dict = type(enabled_dict)()
-      for name, enabled in six.iteritems(enabled_dict):
+      for name, enabled in enabled_dict.items():
 
         if isinstance(enabled.observable.array_spec, specs.BoundedArray):
           bounds = (enabled.observable.array_spec.minimum,
@@ -306,7 +300,7 @@ class Updater(object):
 
     def aggregate_dict(enabled_dict):
       out_dict = type(enabled_dict)()
-      for name, enabled in six.iteritems(enabled_dict):
+      for name, enabled in enabled_dict.items():
         if enabled.observable.aggregator:
           aggregated = enabled.observable.aggregator(
               enabled.buffer.read(self._step_counter))

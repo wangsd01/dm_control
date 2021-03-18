@@ -14,17 +14,12 @@
 # ============================================================================
 """Tests for the keyboard module."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import collections
 from absl.testing import absltest
 from absl.testing import parameterized
 from dm_control.viewer import util
 import mock
 import numpy as np
-from six.moves import range
 
 
 class QuietSetTest(absltest.TestCase):
@@ -81,7 +76,7 @@ class ToIterableTest(parameterized.TestCase):
     original_value = 3
 
     result = util.to_iterable(original_value)
-    self.assertIsInstance(result, collections.Iterable)
+    self.assertIsInstance(result, collections.abc.Iterable)
     self.assertLen(result, 1)
     self.assertEqual(original_value, result[0])
 
@@ -89,7 +84,7 @@ class ToIterableTest(parameterized.TestCase):
     original_value = 'test_string'
 
     result = util.to_iterable(original_value)
-    self.assertIsInstance(result, collections.Iterable)
+    self.assertIsInstance(result, collections.abc.Iterable)
     self.assertLen(result, 1)
     self.assertEqual(original_value, result[0])
 
@@ -121,15 +116,15 @@ class InterleaveTest(absltest.TestCase):
 class TimeMultiplierTests(absltest.TestCase):
 
   def setUp(self):
-    super(TimeMultiplierTests, self).setUp()
+    super().setUp()
     self.factor = util.TimeMultiplier(initial_time_multiplier=1.0)
 
-  def custom_initial_factor(self):
-    initial_value = 5.0
+  def test_custom_initial_factor(self):
+    initial_value = 0.5
     factor = util.TimeMultiplier(initial_time_multiplier=initial_value)
     self.assertEqual(initial_value, factor.get())
 
-  def initial_factor_clamped_to_valid_value_range(self):
+  def test_initial_factor_clamped_to_valid_value_range(self):
     too_large_multiplier = util._MAX_TIME_MULTIPLIER + 1.
     too_small_multiplier = util._MIN_TIME_MULTIPLIER - 1.
 
@@ -140,8 +135,10 @@ class TimeMultiplierTests(absltest.TestCase):
     self.assertEqual(util._MIN_TIME_MULTIPLIER, factor.get())
 
   def test_increase(self):
+    self.factor.decrease()
+    self.factor.decrease()
     self.factor.increase()
-    self.assertEqual(self.factor._real_time_multiplier, 2.0)
+    self.assertEqual(self.factor._real_time_multiplier, 0.5)
 
   def test_increase_limit(self):
     self.factor._real_time_multiplier = util._MAX_TIME_MULTIPLIER
@@ -158,13 +155,6 @@ class TimeMultiplierTests(absltest.TestCase):
     self.factor.decrease()
     self.assertEqual(util._MIN_TIME_MULTIPLIER, self.factor.get())
 
-  def test_stringify_when_greater_than_one(self):
-    self.assertEqual('1', str(self.factor))
-    self.factor.increase()
-    self.assertEqual('2', str(self.factor))
-    self.factor.increase()
-    self.assertEqual('4', str(self.factor))
-
   def test_stringify_when_less_than_one(self):
     self.assertEqual('1', str(self.factor))
     self.factor.decrease()
@@ -176,7 +166,7 @@ class TimeMultiplierTests(absltest.TestCase):
 class IntegratorTests(absltest.TestCase):
 
   def setUp(self):
-    super(IntegratorTests, self).setUp()
+    super().setUp()
     self.integration_step = 1
     self.integrator = util.Integrator(self.integration_step)
     self.integrator._sampling_timestamp = 0.0
@@ -204,7 +194,7 @@ class IntegratorTests(absltest.TestCase):
 class AtomicActionTests(absltest.TestCase):
 
   def setUp(self):
-    super(AtomicActionTests, self).setUp()
+    super().setUp()
     self.callback = mock.MagicMock()
     self.action = util.AtomicAction(self.callback)
 
@@ -216,7 +206,7 @@ class AtomicActionTests(absltest.TestCase):
     self.callback.reset_mock()
 
     self.action.end(1)
-    self.assertEqual(None, self.action.watermark)
+    self.assertIsNone(self.action.watermark)
     self.callback.assert_called_once_with(None)
 
   def test_trying_to_interrupt_with_another_action(self):
@@ -265,7 +255,7 @@ class ObservableFlagTest(absltest.TestCase):
 class TimerTest(absltest.TestCase):
 
   def setUp(self):
-    super(TimerTest, self).setUp()
+    super().setUp()
     self.timer = util.Timer()
 
   def test_time_elapsed(self):
@@ -286,7 +276,7 @@ class TimerTest(absltest.TestCase):
 class ErrorLoggerTest(absltest.TestCase):
 
   def setUp(self):
-    super(ErrorLoggerTest, self).setUp()
+    super().setUp()
     self.callback = mock.MagicMock()
     self.logger = util.ErrorLogger([self.callback])
 
@@ -313,7 +303,7 @@ class ErrorLoggerTest(absltest.TestCase):
 class NullErrorLoggerTest(absltest.TestCase):
 
   def setUp(self):
-    super(NullErrorLoggerTest, self).setUp()
+    super().setUp()
     self.logger = util.NullErrorLogger()
 
   def test_thrown_errors_are_not_being_intercepted(self):

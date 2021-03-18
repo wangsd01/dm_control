@@ -15,10 +15,6 @@
 
 """Cheetah Domain."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import collections
 
 from dm_control import mujoco
@@ -78,7 +74,7 @@ class Cheetah(base.Task):
 
     physics.data.time = 0
     self._timeout_progress = 0
-    super(Cheetah, self).initialize_episode(physics)
+    super().initialize_episode(physics)
 
   def get_observation(self, physics):
     """Returns an observation of the state, ignoring horizontal position."""

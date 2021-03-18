@@ -14,10 +14,6 @@
 # ============================================================================
 """A quadruped "ant" walker."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import os
 
 from dm_control import composer
@@ -26,7 +22,6 @@ from dm_control.composer.observation import observable
 from dm_control.locomotion.walkers import base
 from dm_control.locomotion.walkers import legacy_base
 from dm_control.mujoco import math as mjmath
-
 import numpy as np
 
 _XML_DIRNAME = os.path.join(os.path.dirname(__file__), '../../third_party/ant')
@@ -44,7 +39,7 @@ class Ant(legacy_base.Walker):
       marker_rgba: (Optional) color the ant's front legs with marker_rgba.
       initializer: (Optional) A `WalkerInitializer` object.
     """
-    super(Ant, self)._build(initializer=initializer)
+    super()._build(initializer=initializer)
     self._mjcf_root = mjcf.from_path(os.path.join(_XML_DIRNAME, _XML_FILENAME))
     if name:
       self._mjcf_root.model = name
@@ -63,7 +58,7 @@ class Ant(legacy_base.Walker):
                                  dtype=self.action_spec.dtype)
 
   def apply_action(self, physics, action, random_state):
-    super(Ant, self).apply_action(physics, action, random_state)
+    super().apply_action(physics, action, random_state)
 
     # Updates previous action.
     self._prev_action[:] = action
@@ -181,7 +176,7 @@ class AntObservables(legacy_base.WalkerObservables):
       bodies = self._entity.bodies
       # Get the positions of all the bodies & root in the global frame
       bodies_xpos = physics.bind(bodies).xpos
-      root_xpos = physics.bind(self._entity.root_body).xpos
+      root_xpos, _ = self._entity.get_pose(physics)
       # Compute the relative position of the bodies in the root frame
       root_xmat = np.reshape(physics.bind(self._entity.root_body).xmat, (3, 3))
       return np.reshape(

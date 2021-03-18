@@ -15,17 +15,10 @@
 
 """Module defining the abstract initializer."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import abc
 
-import six
 
-
-@six.add_metaclass(abc.ABCMeta)
-class Initializer(object):
+class Initializer(metaclass=abc.ABCMeta):
   """The abstract base class for an initializer."""
 
   @abc.abstractmethod

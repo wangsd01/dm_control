@@ -15,20 +15,14 @@
 
 """Base class for variations and binary operations on variations."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import abc
 import operator
 
 from dm_control.composer.variation import variation_values
 import numpy as np
-import six
 
 
-@six.add_metaclass(abc.ABCMeta)
-class Variation(object):
+class Variation(metaclass=abc.ABCMeta):
   """Abstract base class for variations."""
 
   @abc.abstractmethod

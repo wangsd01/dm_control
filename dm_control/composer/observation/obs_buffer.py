@@ -15,18 +15,11 @@
 
 """"An object that manages the buffering and delaying of observation."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import collections
-
 import numpy as np
-import six
-from six.moves import range
 
 
-class InFlightObservation(object):
+class InFlightObservation:
   """Represents a delayed observation that may not have arrived yet.
 
   Attributes:
@@ -50,7 +43,7 @@ class InFlightObservation(object):
     return self.arrival < other.arrival
 
 
-class Buffer(object):
+class Buffer:
   """An object that manages the buffering and delaying of observation."""
 
   def __init__(self, buffer_size, shape, dtype, pad_value=0,
@@ -205,7 +198,7 @@ class Buffer(object):
       while True:
         yield InFlightObservation(-np.inf, 0, None)
     existing_timestamp_iter = get_next_existing_timestamp()
-    existing_timestamp = six.next(existing_timestamp_iter)
+    existing_timestamp = next(existing_timestamp_iter)
 
     # Build the simulated state of the pending deque at the end of the proposed
     # schedule.
@@ -217,7 +210,7 @@ class Buffer(object):
       # proposed new observations.
       while existing_timestamp.arrival > new_timestamp.arrival:
         future_pending_deque.appendleft(existing_timestamp)
-        existing_timestamp = six.next(existing_timestamp_iter)
+        existing_timestamp = next(existing_timestamp_iter)
       future_pending_deque.appendleft(new_timestamp)
 
     # Find the next timestep at which `read` is called.

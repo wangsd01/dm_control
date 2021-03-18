@@ -12,12 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ============================================================================
-# Lint as: python2, python3
 """Helpers for loading a collection of trajectories."""
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import abc
 import collections
@@ -28,14 +23,11 @@ from dm_control.locomotion.mocap import mocap_pb2
 from dm_control.locomotion.mocap import trajectory
 import h5py
 import numpy as np
-import six
-from six.moves import range
 
 from google.protobuf import descriptor
 
 
-@six.add_metaclass(abc.ABCMeta)
-class TrajectoryLoader(object):
+class TrajectoryLoader(metaclass=abc.ABCMeta):
   """Base class for helpers that load and decode mocap trajectories."""
 
   def __init__(self, trajectory_class=trajectory.Trajectory,
@@ -53,7 +45,7 @@ class TrajectoryLoader(object):
         non-callable entry.
     """
     self._trajectory_class = trajectory_class
-    if not isinstance(proto_modifier, collections.Iterable):
+    if not isinstance(proto_modifier, collections.abc.Iterable):
       if proto_modifier is None:  # backwards compatibility
         proto_modifier = ()
       else:
@@ -90,9 +82,8 @@ class HDF5TrajectoryLoader(TrajectoryLoader):
                proto_modifier=()):
     self._h5_file = h5py.File(path, mode='r')
     self._keys = tuple(sorted(self._h5_file.keys()))
-    super(HDF5TrajectoryLoader, self).__init__(
-        trajectory_class=trajectory_class,
-        proto_modifier=proto_modifier)
+    super().__init__(
+        trajectory_class=trajectory_class, proto_modifier=proto_modifier)
 
   def keys(self):
     return self._keys
@@ -117,7 +108,7 @@ class HDF5TrajectoryLoader(TrajectoryLoader):
 
   def _get_proto_for_key(self, key):
     """Returns a trajectory protocol buffer message for the specified key."""
-    if isinstance(key, six.text_type):
+    if isinstance(key, str):
       key = key.encode('utf-8')
 
     h5_trajectory = self._h5_file[key]
@@ -170,7 +161,7 @@ class HDF5TrajectoryLoader(TrajectoryLoader):
     return proto
 
 
-class PropMassLimiter(object):
+class PropMassLimiter:
   """A trajectory proto modifier that enforces a maximum mass for each prop."""
 
   def __init__(self, max_mass):
@@ -181,7 +172,7 @@ class PropMassLimiter(object):
       prop.mass = min(prop.mass, self._max_mass)
 
 
-class PropResizer(object):
+class PropResizer:
   """A trajectory proto modifier that changes prop sizes and mass."""
 
   def __init__(self, size_factor=None, size_delta=None, mass=None):
@@ -207,7 +198,7 @@ class PropResizer(object):
       prop.mass = variation.evaluate(self._mass, random_state=random_state)
 
 
-class ZOffsetter(object):
+class ZOffsetter:
   """A trajectory proto modifier that shifts the z position of a trajectory."""
 
   def __init__(self, z_offset=0.0):

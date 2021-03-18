@@ -15,16 +15,11 @@
 
 """Parse and convert amc motion capture data."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import collections
 
 from dm_control.mujoco import math as mjmath
 import numpy as np
 from scipy import interpolate
-from six.moves import range
 
 MOCAP_DT = 1.0/120.0
 CONVERSION_LENGTH = 0.056444
@@ -150,7 +145,7 @@ def parse(file_name):
   return values
 
 
-class Amcvals2qpos(object):
+class Amcvals2qpos:
   """Callable that converts .amc values for a frame and to MuJoCo qpos format.
   """
 

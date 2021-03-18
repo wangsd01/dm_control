@@ -31,13 +31,10 @@ viewport to an array using the `render` method, and can query for objects
 visible at specific positions using the `select` method. The `Physics` class
 also provides a `render` method that returns a pixel array directly.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import collections
 import contextlib
 import threading
+from typing import NamedTuple
 
 from absl import logging
 
@@ -45,14 +42,13 @@ from dm_control import _render
 from dm_control.mujoco import index
 from dm_control.mujoco import wrapper
 from dm_control.mujoco.wrapper import util
+from dm_control.mujoco.wrapper.mjbindings import constants
 from dm_control.mujoco.wrapper.mjbindings import enums
 from dm_control.mujoco.wrapper.mjbindings import mjlib
 from dm_control.mujoco.wrapper.mjbindings import types
 from dm_control.rl import control as _control
 from dm_env import specs
-
 import numpy as np
-import six
 
 _FONT_STYLES = {
     'normal': enums.mjtFont.mjFONT_NORMAL,
@@ -576,7 +572,24 @@ class Physics(_control.Physics):
     return self.data.time
 
 
-class Camera(object):
+class CameraMatrices(NamedTuple):
+  """Component matrices used to construct the camera matrix.
+
+  The matrix product over these components yields the camera matrix.
+
+  Attributes:
+    image: (3, 3) image matrix.
+    focal: (3, 4) focal matrix.
+    rotation: (4, 4) rotation matrix.
+    translation: (4, 4) translation matrix.
+  """
+  image: np.ndarray
+  focal: np.ndarray
+  rotation: np.ndarray
+  translation: np.ndarray
+
+
+class Camera:
   """Mujoco scene camera.
 
   Holds rendering properties such as the width and height of the viewport. The
@@ -624,7 +637,7 @@ class Camera(object):
                        '<visual>\n'
                        '  <global offheight="my_height"/>\n'
                        '</visual>'.format(height, buffer_height))
-    if isinstance(camera_id, six.string_types):
+    if isinstance(camera_id, str):
       camera_id = physics.model.name2id(camera_id, 'camera')
     if camera_id < -1:
       raise ValueError('camera_id cannot be smaller than -1.')
@@ -685,6 +698,57 @@ class Camera(object):
   def scene(self):
     """Returns the `mujoco.MjvScene` instance used by the camera."""
     return self._scene
+
+  def matrices(self) -> CameraMatrices:
+    """Computes the component matrices used to compute the camera matrix.
+
+    Returns:
+      An instance of `CameraMatrices` containing the image, focal, rotation, and
+      translation matrices of the camera.
+    """
+    camera_id = self._render_camera.fixedcamid
+    if camera_id == -1:
+      # If the camera is a 'free' camera, we get its position and orientation
+      # from the scene data structure. It is a stereo camera, so we average over
+      # the left and right channels. Note: we call `self.update()` in order to
+      # ensure that the contents of `scene.camera` are correct.
+      self.update()
+      pos = np.mean(self.scene.camera.pos, axis=0)
+      z = -np.mean(self.scene.camera.forward, axis=0)
+      y = np.mean(self.scene.camera.up, axis=0)
+      rot = np.vstack((np.cross(y, z), y, z))
+      fov = self._physics.model.vis.global_.fovy
+    else:
+      pos = self._physics.data.cam_xpos[camera_id]
+      rot = self._physics.data.cam_xmat[camera_id].reshape(3, 3).T
+      fov = self._physics.model.cam_fovy[camera_id]
+
+    # Translation matrix (4x4).
+    translation = np.eye(4)
+    translation[0:3, 3] = -pos
+    # Rotation matrix (4x4).
+    rotation = np.eye(4)
+    rotation[0:3, 0:3] = rot
+    # Focal transformation matrix (3x4).
+    focal_scaling = (1./np.tan(np.deg2rad(fov)/2)) * self.height / 2.0
+    focal = np.diag([-focal_scaling, focal_scaling, 1.0, 0])[0:3, :]
+    # Image matrix (3x3).
+    image = np.eye(3)
+    image[0, 2] = (self.width - 1) / 2.0
+    image[1, 2] = (self.height - 1) / 2.0
+    return CameraMatrices(
+        image=image, focal=focal, rotation=rotation, translation=translation)
+
+  @property
+  def matrix(self):
+    """Returns the 3x4 camera matrix.
+
+    For a description of the camera matrix see, e.g.,
+    https://en.wikipedia.org/wiki/Camera_matrix.
+    For a usage example, see the associated test.
+    """
+    image, focal, rotation, translation = self.matrices()
+    return image @ focal @ rotation @ translation
 
   def update(self, scene_option=None):
     """Updates geometry used for rendering.
@@ -885,8 +949,7 @@ class MovableCamera(Camera):
       height: Optional image height. Defaults to 240.
       width: Optional image width. Defaults to 320.
     """
-    super(MovableCamera, self).__init__(
-        physics=physics, height=height, width=width, camera_id=-1)
+    super().__init__(physics=physics, height=height, width=width, camera_id=-1)
 
   def get_pose(self):
     """Returns the pose of the camera.
@@ -916,7 +979,7 @@ class MovableCamera(Camera):
     self._render_camera.elevation = elevation
 
 
-class TextOverlay(object):
+class TextOverlay:
   """A text overlay that can be drawn on top of a camera view."""
 
   __slots__ = ('title', 'body', 'style', 'position')
@@ -956,8 +1019,8 @@ def action_spec(physics):
   num_actions = physics.model.nu
   is_limited = physics.model.actuator_ctrllimited.ravel().astype(np.bool)
   control_range = physics.model.actuator_ctrlrange
-  minima = np.full(num_actions, fill_value=-np.inf, dtype=np.float)
-  maxima = np.full(num_actions, fill_value=np.inf, dtype=np.float)
+  minima = np.full(num_actions, fill_value=-constants.mjMAXVAL, dtype=np.float)
+  maxima = np.full(num_actions, fill_value=constants.mjMAXVAL, dtype=np.float)
   minima[is_limited], maxima[is_limited] = control_range[is_limited].T
 
   return specs.BoundedArray(

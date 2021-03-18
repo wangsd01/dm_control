@@ -15,10 +15,6 @@
 
 """Utilities that are helpful for implementing initializers."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import collections
 
 
@@ -30,7 +26,7 @@ def _get_root_model(mjcf_elements):
   return root_model
 
 
-class JointStaticIsolator(object):
+class JointStaticIsolator:
   """Helper class that isolates a collection of MuJoCo joints from others.
 
   An instance of this class is a context manager that caches the positions and
@@ -46,7 +42,7 @@ class JointStaticIsolator(object):
       joints: An iterable of `mjcf.Element` representing joints that may be
         modified inside the context managed by this isolator.
     """
-    if not isinstance(joints, collections.Iterable):
+    if not isinstance(joints, collections.abc.Iterable):
       joints = [joints]
     root_model = _get_root_model(joints)
     other_joints = [joint for joint in root_model.find_all('joint')

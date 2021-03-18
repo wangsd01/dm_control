@@ -15,10 +15,6 @@
 
 """Module defining the abstract entity class."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import abc
 import collections
 import os
@@ -29,7 +25,6 @@ from dm_control import mjcf
 from dm_control.composer import define
 from dm_control.mujoco.wrapper import mjbindings
 import numpy as np
-import six
 
 _OPTION_KEYS = set(['update_interval', 'buffer_size', 'delay', 'aggregator',
                     'corruptor', 'enabled'])
@@ -51,7 +46,7 @@ def _rotate_vector(vec, quat):
   return result
 
 
-class _ObservableKeys(object):
+class _ObservableKeys:
   """Helper object that implements the `observables.dict_keys` functionality."""
 
   def __init__(self, entity, observables):
@@ -67,11 +62,11 @@ class _ObservableKeys(object):
 
   def __dir__(self):
     out = set(self._observables.keys())
-    out.update(dir(super(_ObservableKeys, self)))
+    out.update(dir(super()))
     return list(out)
 
 
-class Observables(object):
+class Observables:
   """Base-class for Entity observables.
 
   Subclasses should declare getter methods annotated with @define.observable
@@ -116,7 +111,7 @@ class Observables(object):
 
       return collections.OrderedDict(
           [(os.path.join(model_identifier, name), observable)
-           for name, observable in six.iteritems(self._observables)])
+           for name, observable in self._observables.items()])
     else:
       # Return a copy to prevent dict being edited.
       return self._observables.copy()
@@ -152,7 +147,7 @@ class Observables(object):
     elif options.keys() and set(options.keys()).issubset(_OPTION_KEYS):
       options = dict([(key, options) for key in self._observables.keys()])
 
-    for obs_key, obs_options in six.iteritems(options):
+    for obs_key, obs_options in options.items():
       try:
         obs = self._observables[obs_key]
       except KeyError:
@@ -174,8 +169,7 @@ class Observables(object):
     self._observables[name].enabled = enabled
 
 
-@six.add_metaclass(abc.ABCMeta)
-class FreePropObservableMixin(object):
+class FreePropObservableMixin(metaclass=abc.ABCMeta):
   """Enforce observables of a free-moving object."""
 
   @abc.abstractproperty
@@ -195,8 +189,7 @@ class FreePropObservableMixin(object):
     pass
 
 
-@six.add_metaclass(abc.ABCMeta)
-class Entity(object):
+class Entity(metaclass=abc.ABCMeta):
   """The abstract base class for an entity in a Composer environment."""
 
   def __init__(self, *args, **kwargs):

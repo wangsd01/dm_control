@@ -15,10 +15,6 @@
 
 """Tests for dm_control.utils.render_executor."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import threading
 import time
 import unittest
@@ -27,7 +23,6 @@ from absl.testing import absltest
 from absl.testing import parameterized
 from dm_control._render import executor
 import mock
-from six.moves import range
 
 
 def enforce_timeout(timeout):

@@ -15,10 +15,6 @@
 
 """Observables that are defined in terms of MJCF elements."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import collections
 
 from dm_control import mjcf
@@ -38,7 +34,7 @@ def _check_mjcf_element(obj):
 
 
 def _check_mjcf_element_iterable(obj_iterable):
-  if not isinstance(obj_iterable, collections.Iterable):
+  if not isinstance(obj_iterable, collections.abc.Iterable):
     obj_iterable = (obj_iterable,)
   for obj in obj_iterable:
     _check_mjcf_element(obj)
@@ -88,8 +84,7 @@ class MJCFFeature(base.Observable):
     self._kind = kind
     self._mjcf_element = mjcf_element
     self._index = index
-    super(MJCFFeature, self).__init__(
-        update_interval, buffer_size, delay, aggregator, corruptor)
+    super().__init__(update_interval, buffer_size, delay, aggregator, corruptor)
 
   def _callable(self, physics):
     binding = physics.bind(self._mjcf_element)
@@ -184,8 +179,7 @@ class MJCFCamera(base.Observable):
     self._depth = depth
     self._segmentation = segmentation
     self._scene_option = scene_option
-    super(MJCFCamera, self).__init__(
-        update_interval, buffer_size, delay, aggregator, corruptor)
+    super().__init__(update_interval, buffer_size, delay, aggregator, corruptor)
 
   @property
   def height(self):

@@ -15,19 +15,14 @@
 
 """Container classes used in control domains."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import collections
-import six
 
 _NAME_ALREADY_EXISTS = (
     "A function named {name!r} already exists in the container and "
     "`allow_overriding_keys` is False.")
 
 
-class TaggedTasks(collections.Mapping):
+class TaggedTasks(collections.abc.Mapping):
   """Maps task names to their corresponding factory functions with tags.
 
   To store a function in a `TaggedTasks` container, we can use its `.add`
@@ -96,11 +91,11 @@ class TaggedTasks(collections.Mapping):
     if not tags:
       return {}
     tags = set(tags)
-    if not tags.issubset(six.viewkeys(self._tags)):
+    if not tags.issubset(self._tags.keys()):
       return {}
-    names = six.viewkeys(self._tags[tags.pop()])
+    names = self._tags[tags.pop()].keys()
     while tags:
-      names &= six.viewkeys(self._tags[tags.pop()])
+      names &= self._tags[tags.pop()].keys()
     return {name: self._tasks[name] for name in names}
 
   def tags(self):
